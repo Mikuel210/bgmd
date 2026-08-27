@@ -1,12 +1,13 @@
 interface Command {
     route: string[],
     description: string,
-    run: (args: Argument[], flags: Flag[]) => number
+    run: (args: Argument[], flags: Flag[]) => Promise<number>
 }
 
 interface Argument {
     value: any,
     description: string,
+    params: boolean,
     validate: (input: string) => boolean
 }
 

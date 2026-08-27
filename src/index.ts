@@ -1,5 +1,6 @@
 import { handle, registerCommand } from "./commands/handler"
 import { handleRoot } from "./commands/general"
+import { addSong } from "./commands/library"
 
 let args = Bun.argv.slice(2);
 
@@ -12,10 +13,7 @@ registerCommand({
 registerCommand({
     route: ["song", "add"],
     description: "Add a song to the library",
-    run: () => {
-
-        return 0;
-    }
+    run: addSong
 });
 
-process.exit(handle(args));
+process.exit(await handle(args));

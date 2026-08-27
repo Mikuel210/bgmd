@@ -6,7 +6,7 @@ const isFlag = (arg: string) => arg.startsWith('-');
 const isRoot = (command: ICommand) => command.route.length == 0;
 const getRoot = () => commands.filter(e => isRoot(e))[0]!;
 
-function handle(args: string[]): number {
+async function handle(args: string[]): Promise<number> {
     let command = resolveCommand(args);
 
     if (command == null) {
@@ -15,7 +15,7 @@ function handle(args: string[]): number {
         return 1;
     }
 
-    return command.run([], []);
+    return await command.run([], []);
 }
 
 function registerCommand(command: ICommand): void {
@@ -33,10 +33,26 @@ function resolveCommand(args: string[]): ICommand | null {
             matches.push(command)
     }
 
-    if (matches.length == 0 && isFlag(args[0]!))
-       return getRoot()
+    if (matches.length == 0)
+    {
+        if (isFlag(args[0]!))
+            return getRoot();
 
-    return null;
+        return null;
+    }
+
+    // Return match with the longest route
+    let max: number = 0;
+    let maxMatch: ICommand | null = null;
+
+    for (const command of matches) {
+        if (command.route.length <= max) continue;
+
+        max = command.route.length;
+        maxMatch = command;
+    }
+
+    return maxMatch;
 }
 
 function matchCommand(args: string[], command: ICommand): boolean {

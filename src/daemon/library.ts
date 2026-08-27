@@ -1,8 +1,7 @@
 import z from "zod"
-import path from "node:path"
-import { configPath, load, save } from "../store"
+import { load, save } from "../store"
 
-const libraryPath = path.join(configPath, "library.json")
+const libraryFileName = "library.json"
 
 const SongSource = z.enum({
     Local: 0,
@@ -15,6 +14,9 @@ const SongState = z.enum({
 });
 
 const SongSchema = z.object({
+    name: z.string(),
+    album: z.string(),
+    artist: z.string(),
     source: SongSource,
     locator: z.string(),
     state: SongState,
@@ -29,30 +31,19 @@ const DimensionSchema = z.object({
 });
 
 const LibrarySchema = z.object({
-    dimensions: z.array(DimensionSchema),
-    songs: z.array(SongSchema)
+    dimensions: z.array(DimensionSchema).default([]),
+    songs: z.record(z.string(), SongSchema).default({})
 });
 
-type Song = z.infer<typeof SongSchema>;
-type Library = z.infer<typeof LibrarySchema>;
+export type Song = z.infer<typeof SongSchema>;
+export type Library = z.infer<typeof LibrarySchema>;
 
-function newLibrary(): Library {
-    return { dimensions: [], songs: [] }
-}
-
-function loadLibrary(): Promise<Library> {
-    return load<Library>(libraryPath, SongSchema);
+function loadLibrary(): Promise<z.ZodSafeParseResult<Library>> {
+    return load<Library>(libraryFileName, LibrarySchema);
 }
 
 function saveLibrary(library: Library): Promise<void> {
-    return save<Library>(libraryPath, library);
+    return save<Library>(libraryFileName, library);
 }
 
-async function addSong(song: Song): Promise<void> {
-    const library = await loadLibrary();
-    library.songs.push(song);
-
-    await saveLibrary(library);
-}
-
-export { SongSchema, loadLibrary, saveLibrary, addSong }
+export { SongSchema, loadLibrary, saveLibrary }
