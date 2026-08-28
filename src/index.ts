@@ -1,6 +1,6 @@
+import { root, songAdd, songEdit, songRemove, songShow } from "./commands";
 import { handle, registerCommand } from "./commands/handler"
-import { root, songAdd, songRemove, songShow } from "./commands/command"
-import { validateSongId, validateString } from "./commands/argument";
+import { validateSongId, validateSongSource, validateString } from "./commands/validate";
 
 let args = Bun.argv.slice(2);
 
@@ -33,6 +33,12 @@ registerCommand({
             description: "The artist of the song to add",
             params: false,
             validate: validateString
+        },
+        {
+            name: "source",
+            description: "The source of the song (Local file | YouTube URL)",
+            params: false,
+            validate: validateSongSource
         }
     ],
     flags: [],
@@ -52,6 +58,30 @@ registerCommand({
     ],
     flags: [],
     run: songShow
+});
+
+registerCommand({
+    route: ["song", "edit"],
+    description: "Edit the properties of a song",
+    args: [
+        {
+            name: "id",
+            description: "The ID of the song to show",
+            params: false,
+            validate: validateSongId
+        }
+    ],
+    flags: [
+        {
+            longName: "source",
+            shortName: 's',
+            description: "Change the song source (File path | YouTube URL)",
+            switch: false,
+            params: false,
+            validate: validateSongSource
+        }
+    ],
+    run: songEdit
 });
 
 registerCommand({
