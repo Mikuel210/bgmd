@@ -1,19 +1,30 @@
 import { handle, registerCommand } from "./commands/handler"
-import { handleRoot } from "./commands/general"
-import { addSong } from "./commands/library"
+import { root, songAdd } from "./commands/command"
+import { validateAddSong } from "./commands/argument";
 
 let args = Bun.argv.slice(2);
 
 registerCommand({
     route: [],
     description: "The background music daemon",
-    run: handleRoot
+    args: [],
+    flags: [],
+    run: root
 });
 
 registerCommand({
     route: ["song", "add"],
     description: "Add a song to the library",
-    run: addSong
+    args: [
+        {
+            name: "name",
+            description: "The name of the song to add",
+            params: false,
+            validate: validateAddSong
+        }
+    ],
+    flags: [],
+    run: songAdd
 });
 
 process.exit(await handle(args));

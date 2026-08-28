@@ -1,9 +1,10 @@
-import type { ICommand } from "./command"
+import type { Argument } from "./argument";
+import type { Command } from "./command"
 
-let commands: ICommand[] = [];
+let commands: Command[] = [];
 
 const isFlag = (arg: string) => arg.startsWith('-');
-const isRoot = (command: ICommand) => command.route.length == 0;
+const isRoot = (command: Command) => command.route.length == 0;
 const getRoot = () => commands.filter(e => isRoot(e))[0]!;
 
 async function handle(args: string[]): Promise<number> {
@@ -15,15 +16,37 @@ async function handle(args: string[]): Promise<number> {
         return 1;
     }
 
-    return await command.run([], []);
+    const positionalArgs = args.slice(command.route.length);
+    const validated: Argument[] = [];
+
+    for (let i = 0; i < command.args.length; i++) {
+        const argument = command.args[i]!;
+        const input = positionalArgs[i];
+
+        if (!input) {
+            console.log(`<${argument.name}> is required`);
+            return 1;
+        }
+
+        const result = await argument.validate(input);
+
+        if (!result.success) {
+            console.error(`<${argument.name}>: ${result.error!}`);
+            return 1;
+        }
+
+        validated.push({ ...argument, value: result.value! });
+    }
+
+    return await command.run(validated, []);
 }
 
-function registerCommand(command: ICommand): void {
+function registerCommand(command: Command): void {
     commands.push(command);
 }
 
-function resolveCommand(args: string[]): ICommand | null {
-    let matches: ICommand[] = [];
+function resolveCommand(args: string[]): Command | null {
+    let matches: Command[] = [];
 
     if (args.length == 0)
         return getRoot();
@@ -43,7 +66,7 @@ function resolveCommand(args: string[]): ICommand | null {
 
     // Return match with the longest route
     let max: number = 0;
-    let maxMatch: ICommand | null = null;
+    let maxMatch: Command | null = null;
 
     for (const command of matches) {
         if (command.route.length <= max) continue;
@@ -55,7 +78,7 @@ function resolveCommand(args: string[]): ICommand | null {
     return maxMatch;
 }
 
-function matchCommand(args: string[], command: ICommand): boolean {
+function matchCommand(args: string[], command: Command): boolean {
     if (args.length < command.route.length) return false;
     if (isRoot(command) && args.length != 0) return false;
 
