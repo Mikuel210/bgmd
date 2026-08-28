@@ -1,6 +1,6 @@
 import type { Argument, Flag } from "./commands/command";
 import type { Song } from "./daemon/library";
-import { delete_librarySongs, get_librarySongs, post_librarySongs } from "./connection";
+import { delete_librarySongs, get_librarySongs, post_librarySongs, put_librarySongs } from "./connection";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");
@@ -52,7 +52,52 @@ export async function songShow(args: Argument[], flags: Flag[]): Promise<number>
 }
 
 export async function songEdit(args: Argument[], flags: Flag[]): Promise<number> {
-    return 1;
+    // Load song
+    const id = args[0]!.value as string;
+    const result = await get_librarySongs(id);
+    const json = await result.json() as Record<string, any>;
+
+    if (!result.ok) {
+        console.error(`Failed to fetch song: ${json.error}`);
+        return 1;
+    }
+
+    const song = json as Song;
+
+    // Edit song
+    let changesMade = false;
+
+    for (const flag of flags) {
+        if (flag.longName == "name") {
+            song.name = flag.value as string;
+            changesMade = true;
+        }
+
+        if (flag.longName == "album") {
+            song.album = flag.value as string;
+            changesMade = true;
+        }
+
+        if (flag.longName == "artist") {
+            song.artist = flag.value as string;
+            changesMade = true;
+        }
+
+        if (flag.longName == "source") {
+            song.source = flag.value as string;
+            changesMade = true;
+        }
+    }
+
+    // Save changes
+    put_librarySongs(id, song);
+
+    if (changesMade)
+        console.log(`Song updated: ${song.artist} - ${song.name}`);
+    else
+        console.warn("No changes made");
+
+    return 0;
 }
 
 export async function songRemove(args: Argument[], flags: Flag[]): Promise<number> {

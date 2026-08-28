@@ -58,7 +58,45 @@ const server = Bun.serve({
                 saveLibrary(library);
 
                 return Response.json({ created: true, song }, { status: 201 });
-            }
+            },
+
+            PUT: async (request) => {
+                const body = await request.json() as Record<string, any>;
+                const songResult = SongSchema.safeParse(body.song);
+
+                if (!songResult.success) {
+                    return Response.json(
+                        { error: "Invalid song", issues: z.prettifyError(songResult.error!) },
+                        { status: 400 }
+                    )
+                }
+
+                const song = songResult.data as Song;
+
+                // Validate library
+                const libraryResult = await loadLibrary();
+
+                if (!libraryResult.success) {
+                    return Response.json(
+                        { error: "Corrupted library", issues: z.prettifyError(libraryResult.error) },
+                        { status: 500 }
+                    )
+                }
+
+                const library = libraryResult.data as Library;
+
+                // Update song
+                const id = body.id;
+
+                if (id in library.songs) {
+                    library.songs[id] = song;
+
+                    await saveLibrary(library);
+                    return Response.json({ updated: true, song }, { status: 200 });
+                }
+
+                return Response.json({ error: "Song not found"}, { status: 404 });
+            },
         },
         "/library/songs/:id": {
             GET: async (request) => {

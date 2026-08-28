@@ -27,6 +27,13 @@ export async function post_librarySongs(song: Song): Promise<Response> {
     });
 }
 
+export async function put_librarySongs(id: string, song: Song): Promise<Response> {
+    return await safeFetch(daemonUrl + "library/songs", {
+        method: "PUT",
+        body: JSON.stringify({ id, song })
+    });
+}
+
 export async function delete_librarySongs(id: string): Promise<Response> {
     return await safeFetch(daemonUrl + `library/songs/${id}`, {
         method: "DELETE"

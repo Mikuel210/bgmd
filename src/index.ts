@@ -24,7 +24,7 @@ registerCommand({
         },
         {
             name: "album",
-            description: "The album on which the song appears",
+            description: "The album of the song to add",
             params: false,
             validate: validateString
         },
@@ -72,6 +72,30 @@ registerCommand({
         }
     ],
     flags: [
+        {
+            longName: "name",
+            shortName: 'n',
+            description: "Change the name of the song",
+            switch: false,
+            params: false,
+            validate: validateString
+        },
+        {
+            longName: "album",
+            shortName: 'a',
+            description: "Change the album of the song",
+            switch: false,
+            params: false,
+            validate: validateString
+        },
+        {
+            longName: "artist",
+            shortName: 'x',
+            description: "Change the artist of the song",
+            switch: false,
+            params: false,
+            validate: validateString
+        },
         {
             longName: "source",
             shortName: 's',

@@ -18,7 +18,8 @@ export interface Flag {
     description: string,
     switch: boolean,
     params: boolean,
-    validate: (input: string) => Promise<ValidateResponse>
+    validate: (input: string) => Promise<ValidateResponse>,
+    value?: any
 }
 
 export interface Command {

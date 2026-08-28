@@ -1,5 +1,4 @@
-import type { Argument } from "./argument";
-import type { Command } from "./command"
+import type { Argument, Command, Flag } from "./command"
 
 let commands: Command[] = [];
 
@@ -19,7 +18,7 @@ async function handle(args: string[]): Promise<number> {
 
     // Validate arguments
     const positionalArgs = args.slice(command.route.length);
-    const validated: Argument[] = [];
+    const validatedArgs: Argument[] = [];
 
     for (let i = 0; i < command.args.length; i++) {
         const argument = command.args[i]!;
@@ -37,11 +36,56 @@ async function handle(args: string[]): Promise<number> {
             return 1;
         }
 
-        validated.push({ ...argument, value: result.value! });
+        validatedArgs.push({ ...argument, value: result.value! });
+    }
+
+    // Validate flags
+    let flagArgs = positionalArgs.slice(command.args.length);
+    const firstFlagIndex = flagArgs.findIndex(e => isFlag(e));
+    const validatedFlags: Flag[] = []
+
+    if (firstFlagIndex == -1)
+        return await command.run(validatedArgs, []);
+
+    flagArgs = flagArgs.slice(firstFlagIndex);
+
+    argLoop: for (let i = 0; i < flagArgs.length; i++) {
+        const flagArg = flagArgs[i]!;
+
+        for (const flag of command.flags) {
+            if (flagArg != `--${flag.longName}` && flagArg != `-${flag.shortName}`)
+                continue;
+
+            if (flag.switch)
+                validatedFlags.push(flag);
+
+            i++;
+
+            // Validate value
+            const input = flagArgs[i];
+
+            if (!input) {
+                console.error(`[--${flag.longName}] can't be empty`);
+                return 1;
+            }
+
+            const result = await flag.validate(input);
+
+            if (!result.success) {
+                console.error(`[--${flag.longName}]: ${result.error!}`);
+                return 1;
+            }
+
+            validatedFlags.push({ ...flag, value: result.value });
+            continue argLoop;
+        }
+
+        console.error(`Unknown option: ${flagArg}`);
+        return 1;
     }
 
     // Run command
-    return await command.run(validated, []);
+    return await command.run(validatedArgs, validatedFlags);
 }
 
 function registerCommand(command: Command): void {
