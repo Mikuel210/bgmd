@@ -1,5 +1,5 @@
 import { handle, registerCommand } from "./commands/handler"
-import { root, songAdd, songRemove } from "./commands/command"
+import { root, songAdd, songRemove, songShow } from "./commands/command"
 import { validateSongId, validateString } from "./commands/argument";
 
 let args = Bun.argv.slice(2);
@@ -37,6 +37,21 @@ registerCommand({
     ],
     flags: [],
     run: songAdd
+});
+
+registerCommand({
+    route: ["song", "show"],
+    description: "Show the properties of a song",
+    args: [
+        {
+            name: "id",
+            description: "The ID of the song to show",
+            params: false,
+            validate: validateSongId
+        }
+    ],
+    flags: [],
+    run: songShow
 });
 
 registerCommand({

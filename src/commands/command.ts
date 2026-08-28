@@ -44,6 +44,22 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
     return 0;
 }
 
+export async function songShow(args: Argument[], flags: Flag[]): Promise<number> {
+    const id = args[0]!.value as string;
+    const result = await get_librarySongs(id);
+    const json = await result.json() as Record<string, any>;
+
+    if (!result.ok) {
+        console.error(`Failed to show song: ${json.error}`);
+        return 1;
+    }
+
+    const song = json as Song;
+    console.log(song);
+
+    return 0;
+}
+
 export async function songRemove(args: Argument[], flags: Flag[]): Promise<number> {
     const id = args[0]!.value as string;
     const getResult = await get_librarySongs(id);
