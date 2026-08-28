@@ -1,10 +1,11 @@
 import type { Argument, Command, Flag } from "./command"
+import { showHelp } from "./help";
 
-let commands: Command[] = [];
+export const isFlag = (arg: string) => arg.startsWith('-');
+export const isRoot = (command: Command) => command.route.length == 0;
+export const getRoot = () => commands.filter(e => isRoot(e))[0]!;
 
-const isFlag = (arg: string) => arg.startsWith('-');
-const isRoot = (command: Command) => command.route.length == 0;
-const getRoot = () => commands.filter(e => isRoot(e))[0]!;
+export let commands: Command[] = [];
 
 async function handle(args: string[]): Promise<number> {
     // Resolve command
@@ -16,8 +17,15 @@ async function handle(args: string[]): Promise<number> {
         return 1;
     }
 
-    // Validate arguments
+    // Trigger help
     const positionalArgs = args.slice(command.route.length);
+
+    if (positionalArgs.some(e => ["-h", "--help"].includes(e))) {
+        showHelp(command);
+        return 0;
+    }
+
+    // Validate arguments
     const validatedArgs: Argument[] = [];
 
     for (let i = 0; i < command.args.length; i++) {
