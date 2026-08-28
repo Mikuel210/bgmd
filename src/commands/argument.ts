@@ -1,6 +1,3 @@
-import { get_library } from "../connection"
-import type { Library, Song } from "../daemon/library";
-
 export interface ValidateResponse {
     success: boolean,
     value?: any,

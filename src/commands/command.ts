@@ -32,10 +32,17 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
         tags: []
     });
 
-    if (result.status != 200) {
+    if (!result.ok) {
+        const json = await result.json() as Record<string, any>;
+        console.error(`Failed to add song: ${json.error}`);
 
         return 1;
     }
 
+    console.log(`Song added: ${artist} - ${name}`);
     return 0;
+}
+
+export async function songRemove(args: Argument[], flags: Flag[]): Promise<number> {
+
 }

@@ -9,7 +9,7 @@ const server = Bun.serve({
     },
     routes: {
         "/": () => new Response("bgmd: All systems nominal"),
-        "/library": async () => Response.json(await loadLibrary()),
+        "/library": async () => Response.json(await loadLibrary(), { status: 200 }),
         "/library/songs": {
             POST: async (request) => {
                 // Validate song
@@ -18,7 +18,7 @@ const server = Bun.serve({
 
                 if (!songResult.success) {
                     return Response.json(
-                        { error: "Invalid song", issues: z.prettifyError(songResult.error) },
+                        { error: "Invalid song", issues: z.prettifyError(songResult.error!) },
                         { status: 400 }
                     )
                 }
@@ -46,7 +46,7 @@ const server = Bun.serve({
                 library.songs[uuid] = song;
                 saveLibrary(library);
 
-                return Response.json({ created: true, song }, { status: 200 });
+                return Response.json({ created: true, song }, { status: 201 });
             }
         }
     }

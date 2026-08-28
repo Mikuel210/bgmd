@@ -1,6 +1,6 @@
 import { handle, registerCommand } from "./commands/handler"
 import { root, songAdd } from "./commands/command"
-import { validateAddSong, validateString } from "./commands/argument";
+import { validateString } from "./commands/argument";
 
 let args = Bun.argv.slice(2);
 
