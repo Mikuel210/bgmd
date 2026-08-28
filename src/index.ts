@@ -1,6 +1,6 @@
 import { handle, registerCommand } from "./commands/handler"
 import { root, songAdd } from "./commands/command"
-import { validateAddSong } from "./commands/argument";
+import { validateAddSong, validateString } from "./commands/argument";
 
 let args = Bun.argv.slice(2);
 
@@ -20,7 +20,19 @@ registerCommand({
             name: "name",
             description: "The name of the song to add",
             params: false,
-            validate: validateAddSong
+            validate: validateString
+        },
+        {
+            name: "album",
+            description: "The album on which the song appears",
+            params: false,
+            validate: validateString
+        },
+        {
+            name: "artist",
+            description: "The artist of the song",
+            params: false,
+            validate: validateString
         }
     ],
     flags: [],

@@ -8,6 +8,7 @@ const isRoot = (command: Command) => command.route.length == 0;
 const getRoot = () => commands.filter(e => isRoot(e))[0]!;
 
 async function handle(args: string[]): Promise<number> {
+    // Resolve command
     let command = resolveCommand(args);
 
     if (command == null) {
@@ -16,6 +17,7 @@ async function handle(args: string[]): Promise<number> {
         return 1;
     }
 
+    // Validate arguments
     const positionalArgs = args.slice(command.route.length);
     const validated: Argument[] = [];
 
@@ -24,7 +26,7 @@ async function handle(args: string[]): Promise<number> {
         const input = positionalArgs[i];
 
         if (!input) {
-            console.log(`<${argument.name}> is required`);
+            console.error(`<${argument.name}> is required`);
             return 1;
         }
 
@@ -38,6 +40,7 @@ async function handle(args: string[]): Promise<number> {
         validated.push({ ...argument, value: result.value! });
     }
 
+    // Run command
     return await command.run(validated, []);
 }
 

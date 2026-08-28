@@ -18,11 +18,13 @@ export async function root(args: Argument[], flags: Flag[]): Promise<number> {
 
 export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> {
     const name = args[0]!.value as string;
+    const album = args[1]!.value as string;
+    const artist = args[2]!.value as string;
 
     const result = await post_librarySongs({
         name: name,
-        album: "meowwww",
-        artist: "barkabrk",
+        album: album,
+        artist: artist,
         source: 0,
         locator: "",
         state: 0,
@@ -30,8 +32,10 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
         tags: []
     });
 
-    if (result.status == 200)
-        return 0;
+    if (result.status != 200) {
 
-    return 1;
+        return 1;
+    }
+
+    return 0;
 }

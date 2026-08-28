@@ -15,29 +15,9 @@ export interface Argument {
     value?: any,
 }
 
-export async function validateAddSong(input: string): Promise<ValidateResponse> {
-    const response = await get_library();
-    const json = await response.json() as Record<string, any>;
-
-    if (response.status != 200) {
-        return {
-            success: false,
-            error: json.error
-        };
-    }
-
-    const library = json.data as Library;
-    const songs = Object.values(library.songs);
-
-    if (songs.some(e => e.name == input)) {
-        return {
-            success: false,
-            error: `Song already exists: ${input}`
-        };
-    }
-
+export async function validateString(input: string): Promise<ValidateResponse> {
     return {
         success: true,
         value: input
-    };
+    }
 }
