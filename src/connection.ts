@@ -16,9 +16,19 @@ export async function get_library(): Promise<Response> {
     return await safeFetch(daemonUrl + "library");
 }
 
+export async function get_librarySongs(id: string): Promise<Response> {
+    return await safeFetch(daemonUrl + `library/songs/${id}`);
+}
+
 export async function post_librarySongs(song: Song): Promise<Response> {
     return await safeFetch(daemonUrl + "library/songs", {
         method: "POST",
         body: JSON.stringify(song)
+    });
+}
+
+export async function delete_librarySongs(id: string): Promise<Response> {
+    return await safeFetch(daemonUrl + `library/songs/${id}`, {
+        method: "DELETE"
     });
 }

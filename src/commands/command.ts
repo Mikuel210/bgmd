@@ -1,6 +1,7 @@
 import type { Argument } from "./argument"
 import type { Flag } from "./flag"
-import { post_librarySongs } from "../connection"
+import { delete_librarySongs, get_librarySongs, post_librarySongs } from "../connection"
+import type { Song } from "../daemon/library";
 
 export interface Command {
     route: string[],
@@ -44,5 +45,28 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
 }
 
 export async function songRemove(args: Argument[], flags: Flag[]): Promise<number> {
+    const id = args[0]!.value as string;
+    const getResult = await get_librarySongs(id);
 
+    if (!getResult.ok) {
+        const json = await getResult.json() as Record<string, any>;
+        console.error(`Failed to remove song: ${json.error}`);
+
+        return 1;
+    }
+
+    const deleteResult = await delete_librarySongs(id);
+
+    if (!deleteResult.ok) {
+        const deleteJson = await deleteResult.json() as Record<string, any>;
+        console.error(`Failed to remove song: ${deleteJson.error}`);
+
+        return 1;
+    }
+
+    const getJson = await getResult.json() as Record<string, any>;
+    const song = getJson as Song;
+
+    console.log(`Song removed: ${song.artist} - ${song.name}`);
+    return 0;
 }

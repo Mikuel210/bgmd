@@ -9,7 +9,18 @@ const server = Bun.serve({
     },
     routes: {
         "/": () => new Response("bgmd: All systems nominal"),
-        "/library": async () => Response.json(await loadLibrary(), { status: 200 }),
+        "/library": async () => {
+            const result = await loadLibrary();
+
+            if (!result.success) {
+                return Response.json(
+                    { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                    { status: 500 }
+                );
+            }
+
+            return Response.json(result.data, { status: 200 })
+        },
         "/library/songs": {
             POST: async (request) => {
                 // Validate song
@@ -47,6 +58,51 @@ const server = Bun.serve({
                 saveLibrary(library);
 
                 return Response.json({ created: true, song }, { status: 201 });
+            }
+        },
+        "/library/songs/:id": {
+            GET: async (request) => {
+                const id = request.params.id;
+                const result = await loadLibrary();
+
+                if (!result.success) {
+                    return Response.json(
+                        { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                        { status: 500 }
+                    );
+                }
+
+                const library = result.data as Library;
+
+                if (id in library.songs) {
+                    return Response.json(library.songs[id], { status: 200 });
+                }
+
+                return Response.json({ error: "Song not found"}, { status: 404 });
+            },
+
+            DELETE: async (request) => {
+                const id = request.params.id;
+                const result = await loadLibrary();
+
+                if (!result.success) {
+                    return Response.json(
+                        { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                        { status: 500 }
+                    );
+                }
+
+                const library = result.data as Library;
+
+                if (id in library.songs) {
+                    const song = library.songs[id];
+                    delete library.songs[id];
+
+                    await saveLibrary(library);
+                    return Response.json({ deleted: true, song }, { status: 200 });
+                }
+
+                return Response.json({ error: "Song not found"}, { status: 404 });
             }
         }
     }
