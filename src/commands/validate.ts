@@ -45,6 +45,29 @@ function isAudioFile(path: string): boolean {
     return audioExtensions.some(e => path.toLowerCase().endsWith(e));
 }
 
+export async function validateLocalSource(input: string): Promise<ValidateResponse> {
+    const file = Bun.file(input);
+
+    if (await file.exists()) {
+        if (isAudioFile(input)) {
+            return {
+                success: true,
+                value: input
+            };
+        }
+
+        return {
+            success: false,
+            error: "Path must be an audio file"
+        }
+    }
+
+    return {
+        success: false,
+        error: "Path not found"
+    }
+}
+
 function cleanYouTubeUrl(input: string): string | null {
     const httpPrefixes = ["https://www.", "https://", "http://www.", "http://"];
     const youtubePrefixes = ["youtube.com/watch?v=", "youtu.be/"];
@@ -77,25 +100,7 @@ function cleanYouTubeUrl(input: string): string | null {
     return null;
 }
 
-export async function validateSongSource(input: string): Promise<ValidateResponse> {
-    // Validate file path
-    const file = Bun.file(input);
-
-    if (await file.exists()) {
-        if (isAudioFile(input)) {
-            return {
-                success: true,
-                value: input
-            };
-        }
-
-        return {
-            success: false,
-            error: "Path must be an audio file"
-        }
-    }
-
-    // Validate and clean YouTube URL
+export async function validateYouTubeSource(input: string): Promise<ValidateResponse> {
     const url = cleanYouTubeUrl(input);
 
     if (url) {
@@ -107,6 +112,6 @@ export async function validateSongSource(input: string): Promise<ValidateRespons
 
     return {
         success: false,
-        error: "File or YouTube video not found"
+        error: "YouTube video not found"
     };
 }

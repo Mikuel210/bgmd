@@ -1,6 +1,7 @@
 import type { Argument, Flag } from "./commands/command";
 import type { Song } from "./daemon/library";
 import { delete_librarySongs, get_librarySongs, post_librarySongs, put_librarySongs } from "./connection";
+import { stringify } from "node:querystring";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");
@@ -8,30 +9,41 @@ export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     return 0;
 }
 
+function stringifySong(id: string, song: Song): string {
+    return `[${id}] ${song.artist} - ${song.name}`;
+}
+
 export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> {
     const name = args[0]!.value as string;
     const album = args[1]!.value as string;
     const artist = args[2]!.value as string;
-    const source = args[3]!.value as string;
 
-    const result = await post_librarySongs({
+    let song: Song = {
         name: name,
         album: album,
         artist: artist,
-        source: source,
         state: 0,
         mood: {},
         tags: []
-    });
+    };
+
+    for (const flag of flags) {
+        if (flag.longName == "youtube-source")
+            song.youtubeSource = flag.value as string;
+
+        if (flag.longName == "local-source")
+            song.localSource = flag.value as string;
+    }
+
+    const result = await post_librarySongs(song);
+    const json = await result.json() as Record<string, any>;
 
     if (!result.ok) {
-        const json = await result.json() as Record<string, any>;
         console.error(`Failed to add song: ${json.error}`);
-
         return 1;
     }
 
-    console.log(`Song added: ${artist} - ${name}`);
+    console.log(`Song added: ${stringifySong(json.id, json.song)}`);
     return 0;
 }
 
@@ -83,8 +95,13 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
             changesMade = true;
         }
 
-        if (flag.longName == "source") {
-            song.source = flag.value as string;
+        if (flag.longName == "youtube-source") {
+            song.youtubeSource = flag.value as string;
+            changesMade = true;
+        }
+
+        if (flag.longName == "local-source") {
+            song.localSource = flag.value as string;
             changesMade = true;
         }
     }
@@ -93,7 +110,7 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
     put_librarySongs(id, song);
 
     if (changesMade)
-        console.log(`Song updated: ${song.artist} - ${song.name}`);
+        console.log(`Song updated: ${stringifySong(id, song)}`);
     else
         console.warn("No changes made");
 
@@ -123,6 +140,6 @@ export async function songRemove(args: Argument[], flags: Flag[]): Promise<numbe
     const getJson = await getResult.json() as Record<string, any>;
     const song = getJson as Song;
 
-    console.log(`Song removed: ${song.artist} - ${song.name}`);
+    console.log(`Song removed: ${stringifySong(id, song)}`);
     return 0;
 }

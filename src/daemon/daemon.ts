@@ -49,15 +49,15 @@ const server = Bun.serve({
                 const library = libraryResult.data as Library;
 
                 // Add song
-                let uuid = crypto.randomUUID().split('-')[0]!;
+                let id = crypto.randomUUID().split('-')[0]!;
 
-                while (uuid in library.songs)
-                    uuid = crypto.randomUUID().split('-')[0]!;
+                while (id in library.songs)
+                    id = crypto.randomUUID().split('-')[0]!;
 
-                library.songs[uuid] = song;
+                library.songs[id] = song;
                 saveLibrary(library);
 
-                return Response.json({ created: true, song }, { status: 201 });
+                return Response.json({ created: true, id, song }, { status: 201 });
             },
 
             PUT: async (request) => {

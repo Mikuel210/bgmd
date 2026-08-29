@@ -1,6 +1,6 @@
 import { root, songAdd, songEdit, songRemove, songShow } from "./commands";
 import { handle, registerCommand } from "./commands/handler"
-import { validateSongId, validateSongSource, validateString } from "./commands/validate";
+import { validateLocalSource, validateSongId, validateString, validateYouTubeSource } from "./commands/validate";
 
 let args = Bun.argv.slice(2);
 
@@ -33,15 +33,26 @@ registerCommand({
             description: "The artist of the song to add",
             params: false,
             validate: validateString
-        },
-        {
-            name: "source",
-            description: "The source of the song (Local file | YouTube URL)",
-            params: false,
-            validate: validateSongSource
         }
     ],
-    flags: [],
+    flags: [
+        {
+            longName: "youtube-source",
+            shortName: 'y',
+            description: "Add a YouTube source for the song",
+            switch: false,
+            params: false,
+            validate: validateYouTubeSource
+        },
+        {
+            longName: "local-source",
+            shortName: 'l',
+            description: "Add a local source for the song",
+            switch: false,
+            params: false,
+            validate: validateLocalSource
+        }
+    ],
     run: songAdd
 });
 
@@ -97,12 +108,20 @@ registerCommand({
             validate: validateString
         },
         {
-            longName: "source",
-            shortName: 's',
-            description: "Change the song source (File path | YouTube URL)",
+            longName: "youtube-source",
+            shortName: 'y',
+            description: "Change the YouTube source of the song",
             switch: false,
             params: false,
-            validate: validateSongSource
+            validate: validateYouTubeSource
+        },
+        {
+            longName: "local-source",
+            shortName: 'l',
+            description: "Change the local source of the song",
+            switch: false,
+            params: false,
+            validate: validateLocalSource
         }
     ],
     run: songEdit

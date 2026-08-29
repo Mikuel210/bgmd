@@ -12,7 +12,8 @@ export const SongSchema = z.object({
     name: z.string(),
     album: z.string(),
     artist: z.string(),
-    source: z.string(),
+    youtubeSource: z.string().optional(),
+    localSource: z.string().optional(),
     state: SongState,
     mood: z.record(z.string(), z.number()),
     tags: z.array(z.string())
