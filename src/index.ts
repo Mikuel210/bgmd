@@ -1,4 +1,4 @@
-import { library, root, songAdd, songEdit, songRemove, songShow } from "./commands";
+import { library, play, root, songAdd, songEdit, songRemove, songShow, stop } from "./commands";
 import { handle, registerCommand } from "./commands/handler"
 import { validateLocalSource, validateSongId, validateString, validateYouTubeSource } from "./commands/validate";
 
@@ -18,7 +18,7 @@ registerCommand({
     args: [],
     flags: [],
     run: library
-})
+});
 
 registerCommand({
     route: ["song", "add"],
@@ -148,6 +148,29 @@ registerCommand({
     ],
     flags: [],
     run: songRemove
+});
+
+registerCommand({
+    route: ["play"],
+    description: "Play a song",
+    args: [
+        {
+            name: "id",
+            description: "The ID of the song to play",
+            params: false,
+            validate: validateSongId
+        }
+    ],
+    flags: [],
+    run: play
+});
+
+registerCommand({
+    route: ["stop"],
+    description: "Stop playback",
+    args: [],
+    flags: [],
+    run: stop
 });
 
 process.exit(await handle(args));

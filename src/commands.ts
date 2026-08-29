@@ -1,6 +1,6 @@
 import type { Argument, Flag } from "./commands/command";
 import type { Song } from "./daemon/library";
-import { delete_librarySongs, get_library, get_librarySongs, post_librarySongs, put_librarySongs } from "./connection";
+import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop, post_librarySongs, put_librarySongs } from "./connection";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");
@@ -28,6 +28,8 @@ export async function library(args: Argument[], flags: Flag[]): Promise<number> 
 
     return 0;
 }
+
+
 
 export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> {
     const name = args[0]!.value as string;
@@ -157,5 +159,32 @@ export async function songRemove(args: Argument[], flags: Flag[]): Promise<numbe
     const song = getJson as Song;
 
     console.log(`Song removed: ${stringifySong(id, song)}`);
+    return 0;
+}
+
+export async function play(args: Argument[], flags: Flag[]): Promise<number> {
+    const id = args[0]!.value as string;
+    const result = await get_play(id);
+    const json = await result.json() as Record<string, any>;
+
+    if (!result.ok) {
+        console.error(`Failed to play song: ${json.error}`);
+        return 1;
+    }
+
+    console.log(`Now playing: ${stringifySong(id, json.song)}`);
+    return 0;
+}
+
+export async function stop(args: Argument[], flags: Flag[]): Promise<number> {
+    const result = await get_stop();
+    const json = await result.json() as Record<string, any>;
+
+    if (!result.ok) {
+        console.error(`Failed to stop playback: ${json.error}`);
+        return 1;
+    }
+
+    console.log("Playback stopped");
     return 0;
 }

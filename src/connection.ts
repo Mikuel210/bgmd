@@ -39,3 +39,11 @@ export async function delete_librarySongs(id: string): Promise<Response> {
         method: "DELETE"
     });
 }
+
+export async function get_play(id: string): Promise<Response> {
+    return await safeFetch(daemonUrl + `play/${id}`);
+}
+
+export async function get_stop(): Promise<Response> {
+    return await safeFetch(daemonUrl + "stop");
+}

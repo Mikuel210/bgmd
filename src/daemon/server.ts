@@ -1,6 +1,7 @@
 import z from "zod"
 import type { Library, Song } from "./library"
 import { SongSchema, loadLibrary, saveLibrary } from "./library"
+import { play, stop } from "./daemon"
 
 export function serve(): void {
     const server = Bun.serve({
@@ -141,36 +142,32 @@ export function serve(): void {
                         return Response.json({ deleted: true, song }, { status: 200 });
                     }
 
-                    return Response.json({ error: "Song not found"}, { status: 404 });
+                    return Response.json({ error: "Song not found" }, { status: 404 });
                 }
             },
-            "/play/:id": {
-                GET: async (request) => {
-                    const id = request.params.id;
-                    const result = await loadLibrary();
+            "/play/:id": async (request) => {
+                const id = request.params.id;
+                const result = await loadLibrary();
 
-                    if (!result.success) {
-                        return Response.json(
-                            { error: "Corrupted library", issues: z.prettifyError(result.error) },
-                            { status: 500 }
-                        );
-                    }
-
-                    const library = result.data as Library;
-
-                    if (id in library.songs) {
-                        const song = library.songs[id] as Song;
-
-                        if (song.youtubeSource) {
-                            Bun.spawn(["mpv", song.youtubeSource, "--no-video", "--aid=1"])
-                            return Response.json({ playing: true }, { status: 200 });
-                        }
-
-                        return Response.json({ error: "No source available" }, { status: 500 });
-                    }
-
-                    return Response.json({ error: "Song not found"}, { status: 404 });
+                if (!result.success) {
+                    return Response.json(
+                        { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                        { status: 500 }
+                    );
                 }
+
+                const library = result.data as Library;
+
+                if (id in library.songs) {
+                    const song = library.songs[id] as Song;
+                    return play(song);
+                }
+
+                return Response.json({ error: "Song not found" }, { status: 404 });
+            },
+            "/stop": async (request) => {
+                stop();
+                return Response.json({ stopped: true }, { status: 200 });
             }
         }
     })
