@@ -20,7 +20,7 @@ async function handle(args: string[]): Promise<number> {
     // Trigger help
     const positionalArgs = args.slice(command.route.length);
 
-    if (positionalArgs.some(e => ["-h", "--help"].includes(e))) {
+    if (positionalArgs.some(e => ["-h", "-?", "--help"].includes(e))) {
         showHelp(command);
         return 0;
     }

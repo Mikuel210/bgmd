@@ -22,4 +22,31 @@ export function stop(): void {
     currentSong = null;
 }
 
+const json = await (await fetch("https://itunes.apple.com/search?term=bleachers&entity=musicArtist&limit=5")).json() as Record<string, any>;
+const artistName = json.results[0].artistName as string;
+const artistId = json.results[0].artistId as number;
+const json1 = await (await fetch(`https://itunes.apple.com/lookup?id=${artistId}&entity=song`)).json() as Record<string, any>;
+const apiSongs: Record<string, any>[] = json1.results;
+
+const songs: Song[] = apiSongs
+    .filter(e =>
+        e.wrapperType == "track" &&
+        e.artistName == artistName
+    )
+    .map(e => {
+        return {
+            name: e.trackName,
+            album: e.collectionName,
+            artist: e.artistName,
+            discNumber: e.discNumber,
+            trackNumber: e.trackNumber,
+            state: 0,
+            mood: {},
+            tags: []
+        };
+    }
+);
+
+console.log(songs);
+
 serve();

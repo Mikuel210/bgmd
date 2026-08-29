@@ -1,6 +1,6 @@
 import { library, play, root, songAdd, songEdit, songRemove, songShow, stop } from "./commands";
 import { handle, registerCommand } from "./commands/handler"
-import { validateLocalSource, validateSongId, validateString, validateYouTubeSource } from "./commands/validate";
+import { validateLocalSource, validatePositiveInteger, validateSongId, validateString, validateYouTubeSource } from "./commands/validate";
 
 let args = Bun.argv.slice(2);
 
@@ -44,6 +44,22 @@ registerCommand({
         }
     ],
     flags: [
+        {
+            longName: "disc-number",
+            shortName: 'd',
+            description: "Set the disc number for the song (default 1)",
+            switch: false,
+            params: false,
+            validate: validatePositiveInteger
+        },
+        {
+            longName: "track-number",
+            shortName: 't',
+            description: "Set the track number for the song (default next empty in disc)",
+            switch: false,
+            params: false,
+            validate: validatePositiveInteger
+        },
         {
             longName: "youtube-source",
             shortName: 'y',
@@ -114,6 +130,22 @@ registerCommand({
             switch: false,
             params: false,
             validate: validateString
+        },
+        {
+            longName: "disc-number",
+            shortName: 'd',
+            description: "Change the disc number for the song",
+            switch: false,
+            params: false,
+            validate: validatePositiveInteger
+        },
+        {
+            longName: "track-number",
+            shortName: 't',
+            description: "Change the track number for the song",
+            switch: false,
+            params: false,
+            validate: validatePositiveInteger
         },
         {
             longName: "youtube-source",

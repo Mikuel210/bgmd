@@ -115,3 +115,26 @@ export async function validateYouTubeSource(input: string): Promise<ValidateResp
         error: "YouTube video not found"
     };
 }
+
+export async function validatePositiveInteger(input: string): Promise<ValidateResponse> {
+    try {
+        const number = parseInt(input);
+
+        if (number <= 0) {
+            return {
+                success: false,
+                error: "Value must be greater than 0"
+            };
+        }
+
+        return {
+            success: true,
+            value: number
+        };
+    } catch {
+        return {
+            success: false,
+            error: "Value must be a number"
+        }
+    }
+}
