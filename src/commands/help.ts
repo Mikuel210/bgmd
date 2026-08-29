@@ -39,6 +39,27 @@ export function showHelp(command: Command): void {
             console.log(`  ${name}${spaceString}${flag.description}`);
         }
     }
+
+    const subcommands = getSubcommands(command);
+
+    if (subcommands.length > 0) {
+        console.log(`\n${isRoot(command) ? "Available commands:" : "Subcommands:"}`);
+        const routes: Record<string, Command> = {};
+
+        for (const command of subcommands) {
+            const name = `bgmctl ${command.route.join(' ')}`;
+            routes[name] = command;
+        }
+
+        const spaces = Math.max(...Object.keys(routes).map(e => e.length)) + extraSpaces;
+
+        for (const command of subcommands) {
+            const route = Object.keys(routes).find(e => routes[e] == command)!;
+            const spaceString = ' '.repeat(spaces - route.length);
+
+            console.log(`  ${route}${spaceString}${command.description}`);
+        }
+    }
 }
 
 function getUsage(command: Command): string {
@@ -66,4 +87,11 @@ function getUsage(command: Command): string {
     }).join(' ');
 
     return `bgmctl ${args} ${flags}`;
+}
+
+function getSubcommands(command: Command): Command[] {
+    return commands.filter(e =>
+        e.route.length > command.route.length &&
+        JSON.stringify(e.route.slice(0, command.route.length)) == JSON.stringify(command.route)
+    );
 }
