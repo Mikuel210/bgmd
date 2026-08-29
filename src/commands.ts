@@ -1,7 +1,6 @@
 import type { Argument, Flag } from "./commands/command";
 import type { Song } from "./daemon/library";
-import { delete_librarySongs, get_librarySongs, post_librarySongs, put_librarySongs } from "./connection";
-import { stringify } from "node:querystring";
+import { delete_librarySongs, get_library, get_librarySongs, post_librarySongs, put_librarySongs } from "./connection";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");
@@ -11,6 +10,23 @@ export async function root(args: Argument[], flags: Flag[]): Promise<number> {
 
 function stringifySong(id: string, song: Song): string {
     return `[${id}] ${song.artist} - ${song.name}`;
+}
+
+export async function library(args: Argument[], flags: Flag[]): Promise<number> {
+    const result = await get_library();
+    const json = await result.json() as Record<string, any>;
+
+    if (!result.ok) {
+        console.error(`Failed to fetch library: ${json.error}`);
+        return 1;
+    }
+
+    const songs = json.songs as Record<string, Song>;
+
+    for (const [id, song] of Object.entries(songs))
+        console.log(stringifySong(id, song));
+
+    return 0;
 }
 
 export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> {

@@ -1,4 +1,4 @@
-import { root, songAdd, songEdit, songRemove, songShow } from "./commands";
+import { library, root, songAdd, songEdit, songRemove, songShow } from "./commands";
 import { handle, registerCommand } from "./commands/handler"
 import { validateLocalSource, validateSongId, validateString, validateYouTubeSource } from "./commands/validate";
 
@@ -11,6 +11,14 @@ registerCommand({
     flags: [],
     run: root
 });
+
+registerCommand({
+    route: ["library"],
+    description: "Show all songs in the library",
+    args: [],
+    flags: [],
+    run: library
+})
 
 registerCommand({
     route: ["song", "add"],
