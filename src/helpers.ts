@@ -7,11 +7,8 @@ function getId(library: Library, song: Song): string {
     return Object.keys(library.songs).filter(e => library.songs[e] == song)[0]!;
 }
 
-function isValidTrackNumber(library: Library, id: string, song: Song): boolean {
-    const otherSongs = Object.values(library.songs)
-        .filter(e => getId(library, e) != id);
-
-    return !otherSongs.some(e =>
+function isValidTrackNumber(songs: Song[], song: Song): boolean {
+    return !songs.some(e =>
         e.artist == song.artist &&
         e.album == song.album &&
         e.discNumber == song.discNumber &&
@@ -32,8 +29,9 @@ export async function addSong(song: Song, explicitTrackNumber: boolean): Promise
     }
 
     const library = libraryJson as Library;
+    const songs = Object.values(library.songs);
 
-    if (!isValidTrackNumber(library, id, song)) {
+    if (!isValidTrackNumber(songs, song)) {
         if (explicitTrackNumber) {
             return {
                 success: false,
@@ -92,8 +90,9 @@ export async function editSong(id: string, song: Song): Promise<TaskResult> {
     }
 
     const library = libraryJson as Library;
+    const songs = Object.values(library.songs).filter(e => getId(library, e) != id);
 
-    if (!isValidTrackNumber(library, id, song)) {
+    if (!isValidTrackNumber(songs, song)) {
         return {
             success: false,
             error: `A song with the same track number is already in the disc`
