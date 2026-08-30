@@ -35,7 +35,10 @@ async function search(query: string, limit: number, entity: string, wrapperType:
     }
 
     let response: Record<string, any>[] = json.results;
-    response = response.filter(e => e.wrapperType == wrapperType);
+
+    response = response
+        .filter(e => e.wrapperType == wrapperType)
+        .slice(0, limit);
 
     return {
         success: true,
@@ -128,8 +131,8 @@ export async function sourceFromTrack(track: Track): Promise<string> {
     return `https://youtube.com/watch?v=${videoId}`;
 }
 
-export async function tracksFromArtist(artist: Artist): Promise<TaskResult> {
-    const result = await fetch(`https://itunes.apple.com/lookup?id=${artist.id}&entity=song`)
+async function tracksFromId(id: number, artistName: string): Promise<TaskResult> {
+    const result = await fetch(`https://itunes.apple.com/lookup?id=${id}&entity=song`)
     const json = await result.json() as Record<string, any>;
 
     if (!result.ok) {
@@ -141,27 +144,39 @@ export async function tracksFromArtist(artist: Artist): Promise<TaskResult> {
 
     const response: Record<string, any>[] = json.results;
 
-    const songs: Song[] = response
+    const tracks: Track[] = response
         .filter(e =>
             e.wrapperType == "track" &&
-            e.artistName == artist.name
+            e.artistName == artistName
         )
         .map(e => {
             return {
+                id: e.trackId,
                 name: e.trackName,
-                album: e.collectionName,
-                artist: e.artistName,
                 discNumber: e.discNumber,
                 trackNumber: e.trackNumber,
-                state: 0,
-                mood: {},
-                tags: []
+                album: {
+                    id: e.collectionId,
+                    name: e.collectionName,
+                    artist: {
+                        id: e.artistId,
+                        name: e.artistName
+                    }
+                }
             };
         }
     );
 
     return {
         success: true,
-        value: songs
+        value: tracks
     };
+}
+
+export function tracksFromAlbum(album: Album): Promise<TaskResult> {
+    return tracksFromId(album.id, album.artist.name);
+}
+
+export function tracksFromArtist(artist: Artist): Promise<TaskResult> {
+    return tracksFromId(artist.id, artist.name);
 }

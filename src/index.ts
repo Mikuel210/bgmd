@@ -1,4 +1,4 @@
-import { captureSong, library, play, root, songAdd, songEdit, songRemove, songShow, stop } from "./commands";
+import { captureAlbum, captureArtist, captureSong, library, play, root, songAdd, songEdit, songRemove, songShow, stop } from "./commands";
 import { handle, registerCommand } from "./commands/handler"
 import { validateLocalSource, validatePositiveInteger, validateSongId, validateString, validateYouTubeSource } from "./commands/validate";
 
@@ -218,6 +218,36 @@ registerCommand({
     ],
     flags: [],
     run: captureSong
-})
+});
+
+registerCommand({
+    route: ["capture", "album"],
+    description: "Search and add an album to the library",
+    args: [
+        {
+            name: "name",
+            description: "The name of the album to capture",
+            params: false,
+            validate: validateString
+        }
+    ],
+    flags: [],
+    run: captureAlbum
+});
+
+registerCommand({
+    route: ["capture", "artist"],
+    description: "Search and add an artist to the library",
+    args: [
+        {
+            name: "name",
+            description: "The name of the artist to capture",
+            params: false,
+            validate: validateString
+        }
+    ],
+    flags: [],
+    run: captureArtist
+});
 
 process.exit(await handle(args));

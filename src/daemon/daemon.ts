@@ -1,6 +1,6 @@
 import type { Song } from "./library";
 import { serve } from "./server";
-import { tracksFromArtist } from "../resolver"
+import { songsFromArtist } from "../resolver"
 
 let currentSong: Song | null = null;
 let currentProcess: Bun.Subprocess | null = null;

@@ -1,8 +1,9 @@
 import type { Argument, Flag } from "./commands/command";
-import type { Library, Song } from "./daemon/library";
-import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop, post_librarySongs, put_librarySongs } from "./connection";
-import { searchTracks, sourceFromTrack, type Track } from "./resolver";
-import type { TaskResult } from "./task";
+import type { Song } from "./daemon/library";
+import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop } from "./connection";
+import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "./resolver";
+import { addSong, captureTrack, editSong } from "./helpers";
+import { runWithConcurrency as forEachConcurrent } from "./task";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");
@@ -11,7 +12,7 @@ export async function root(args: Argument[], flags: Flag[]): Promise<number> {
 }
 
 function stringifySong(id: string, song: Song): string {
-    return `[${id}] ${song.artist} - ${song.name}`;
+    return `[${id}] ${song.artist} - ${song.name} (${song.album})`;
 }
 
 export async function library(args: Argument[], flags: Flag[]): Promise<number> {
@@ -29,82 +30,6 @@ export async function library(args: Argument[], flags: Flag[]): Promise<number> 
         console.log(stringifySong(id, song));
 
     return 0;
-}
-
-function getId(library: Library, song: Song): string {
-    return Object.keys(library.songs).filter(e => library.songs[e] == song)[0]!;
-}
-
-function isValidTrackNumber(library: Library, song: Song): boolean {
-    const otherSongs = Object.values(library.songs)
-        .filter(e => getId(library, e) != getId(library, song));
-
-    return !otherSongs.some(e =>
-        e.artist == song.artist &&
-        e.album == song.album &&
-        e.discNumber == song.discNumber &&
-        e.trackNumber == song.trackNumber
-    );
-}
-
-async function addSong(song: Song, explicitTrackNumber: boolean): Promise<TaskResult> {
-    // Validate track number
-    const libraryResult = await get_library();
-    const libraryJson = await libraryResult.json() as Record<string, any>;
-
-    if (!libraryResult.ok) {
-        return {
-            success: false,
-            error: `Failed to fetch library: ${libraryJson.error}`
-        };
-    }
-
-    const library = libraryJson as Library;
-
-    if (!isValidTrackNumber(library, song)) {
-        if (explicitTrackNumber) {
-            return {
-                success: false,
-                error: `Track number already exists in disc`
-            };
-        }
-
-        // Pick next valid track number
-        const discSongs = Object.values(library.songs).filter(e =>
-            e.artist == song.artist &&
-            e.album == song.album &&
-            e.discNumber == song.discNumber
-        ).sort((a, b) => a.trackNumber - b.trackNumber);
-
-        let lastTrackNumber = 0;
-
-        for (const discSong of discSongs) {
-            if (discSong.trackNumber == lastTrackNumber + 1) {
-                lastTrackNumber++;
-                continue;
-            }
-
-            break;
-        }
-
-        song.trackNumber = lastTrackNumber + 1;
-    }
-
-    // Add song
-    const addResult = await post_librarySongs(song);
-    const addJson = await addResult.json() as Record<string, any>;
-
-    if (!addResult.ok) {
-        return {
-            success: false,
-            error: `Failed to add song: ${addJson.error}`
-        };
-    }
-
-    return {
-        success: true,
-        value: addJson
-    }
 }
 
 export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> {
@@ -219,24 +144,13 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
         }
     }
 
-    // Validate track number
-    const libraryResult = await get_library();
-    const libraryJson = await libraryResult.json() as Record<string, any>;
+    // Edit song
+    const editResult = await editSong(id, song);
 
-    if (!libraryResult.ok) {
-        console.error(`Failed to fetch library: ${libraryJson.error}`);
+    if (!editResult.success) {
+        console.error(editResult.error);
         return 1;
     }
-
-    const library = libraryJson as Library;
-
-    if (!isValidTrackNumber(library, song)) {
-        console.error(`A song with the same track number is already in the disc`);
-        return 1;
-    }
-
-    // Save changes
-    put_librarySongs(id, song);
 
     if (changesMade)
         console.log(`Song updated: ${stringifySong(id, song)}`);
@@ -251,8 +165,8 @@ export async function songRemove(args: Argument[], flags: Flag[]): Promise<numbe
     const getResult = await get_librarySongs(id);
 
     if (!getResult.ok) {
-        const json = await getResult.json() as Record<string, any>;
-        console.error(`Failed to remove song: ${json.error}`);
+        const getJson = await getResult.json() as Record<string, any>;
+        console.error(`Failed to remove song: ${getJson.error}`);
 
         return 1;
     }
@@ -301,6 +215,7 @@ export async function stop(args: Argument[], flags: Flag[]): Promise<number> {
 }
 
 export async function captureSong(args: Argument[], flags: Flag[]): Promise<number> {
+    // Search song
     const query = args[0]!.value as string;
     const searchResult = await searchTracks(query);
 
@@ -319,50 +234,177 @@ export async function captureSong(args: Argument[], flags: Flag[]): Promise<numb
     // Validate input
     const range = `(1 - ${tracks.length}):`;
     const input = prompt(`\nSelect a song to add ${range}`) ?? "";
+    let number;
 
     try {
-        const number = parseInt(input);
-
-        if (number < 1) {
-            console.error("Value must be greater than 0");
-            return 1;
-        }
-
-        if (number > tracks.length) {
-            console.error(`Value must be lower than ${tracks.length + 1}`);
-            return 1;
-        }
-
-        const track = tracks[number - 1]!;
-
-        console.log("Fetching YouTube URL...");
-        const url = await sourceFromTrack(track);
-
-        const song: Song = {
-            name: track.name,
-            album: track.album.name,
-            artist: track.album.artist.name,
-            discNumber: track.discNumber,
-            trackNumber: track.trackNumber,
-            youtubeSource: url,
-            state: 0,
-            mood: {},
-            tags: []
-        };
-
-        const addResult = await addSong(song, true);
-
-        if (!addResult.success) {
-            console.error(addResult.error);
-            return 1;
-        }
-
-        const addJson = addResult.value as Record<string, any>;
-        console.log(`Song captured: ${stringifySong(addJson.id, addJson.song)}`);
-
-        return 0;
+        number = parseInt(input);
     } catch {
         console.error(`Value must be a number ${range}`);
         return 1;
     }
+
+    // Validate range
+    if (number < 1) {
+        console.error("Value must be greater than 0");
+        return 1;
+    }
+
+    if (number > tracks.length) {
+        console.error(`Value must be lower than ${tracks.length + 1}`);
+        return 1;
+    }
+
+    const track = tracks[number - 1]!;
+
+    // Capture song
+    console.log(`Capturing song: ${track.album.artist.name} - ${track.name}`);
+    const captureResult = await captureTrack(track);
+
+    if (!captureResult.success) {
+        console.error(captureResult);
+        return 1;
+    }
+
+    const captureJson = captureResult.value as Record<string, any>;
+    console.log(`Song captured: ${stringifySong(captureJson.id, captureJson.song)}`);
+
+    return 0;
+}
+
+export async function captureAlbum(args: Argument[], flags: Flag[]): Promise<number> {
+    // Search album
+    const query = args[0]!.value as string;
+    const searchResult = await searchAlbums(query);
+
+    if (!searchResult.success) {
+        console.error(searchResult.error);
+        return 1;
+    }
+
+    const albums = searchResult.value as Album[];
+
+    for (let i = 0; i < albums.length; i++) {
+        const album = albums[i]!;
+        console.log(`${i + 1}. ${album.artist.name} - ${album.name}`);
+    }
+
+    // Validate input
+    const range = `(1 - ${albums.length})`;
+    const input = prompt(`\nSelect an album to add ${range}:`) ?? "";
+    let number;
+
+    try {
+        number = parseInt(input);
+    } catch (e) {
+        console.error(`Value must be a number ${range}`);
+        return 1;
+    }
+
+    // Validate range
+    if (number < 1) {
+        console.error("Value must be greater than 0");
+        return 1;
+    }
+
+    if (number > albums.length) {
+        console.error(`Value must be lower than ${albums.length + 1}`);
+        return 1;
+    }
+
+    const album = albums[number - 1]!;
+
+    // Fetch tracks
+    const tracksResult = await tracksFromAlbum(album);
+
+    if (!tracksResult.success) {
+        console.error(tracksResult.error);
+        return 1;
+    }
+
+    const tracks = tracksResult.value as Track[];
+
+    // Capture songs
+    await forEachConcurrent(tracks, 3, async (track) => {
+        console.log(`Capturing song: ${track.album.artist.name} - ${track.name}`);
+        const captureResult = await captureTrack(track);
+
+        if (!captureResult.success) {
+            console.error(`${track.name}: ${captureResult.error}`);
+            return;
+        }
+
+        const captureJson = captureResult.value as Record<string, any>;
+        console.log(`Song captured: ${stringifySong(captureJson.id, captureJson.song)}`);
+    });
+
+    return 0;
+}
+
+export async function captureArtist(args: Argument[], flags: Flag[]): Promise<number> {
+    // Search album
+    const query = args[0]!.value as string;
+    const searchResult = await searchArtists(query);
+
+    if (!searchResult.success) {
+        console.error(searchResult.error);
+        return 1;
+    }
+
+    const artists = searchResult.value as Artist[];
+
+    for (let i = 0; i < artists.length; i++) {
+        const artist = artists[i]!;
+        console.log(`${i + 1}. ${artist.name}`);
+    }
+
+    // Validate input
+    const range = `(1 - ${artists.length})`;
+    const input = prompt(`\nSelect an artist to add ${range}:`) ?? "";
+    let number;
+
+    try {
+        number = parseInt(input);
+    } catch (e) {
+        console.error(`Value must be a number ${range}`);
+        return 1;
+    }
+
+    // Validate range
+    if (number < 1) {
+        console.error("Value must be greater than 0");
+        return 1;
+    }
+
+    if (number > artists.length) {
+        console.error(`Value must be lower than ${artists.length + 1}`);
+        return 1;
+    }
+
+    const artist = artists[number - 1]!;
+
+    // Fetch tracks
+    const tracksResult = await tracksFromArtist(artist);
+
+    if (!tracksResult.success) {
+        console.error(tracksResult.error);
+        return 1;
+    }
+
+    const tracks = tracksResult.value as Track[];
+
+    // Capture songs
+    await forEachConcurrent(tracks, 3, async (track) => {
+        console.log(`Capturing song: ${track.album.artist.name} - ${track.name}`);
+        const captureResult = await captureTrack(track);
+
+        if (!captureResult.success) {
+            console.error(`${track.name}: ${captureResult.error}`);
+            return;
+        }
+
+        const captureJson = captureResult.value as Record<string, any>;
+        console.log(`Song captured: ${stringifySong(captureJson.id, captureJson.song)}`);
+    });
+
+    return 0;
 }
