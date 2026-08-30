@@ -1,4 +1,4 @@
-import type { TaskResult } from "./task";
+import { forEachConcurrent, type TaskResult } from "./task";
 import type { Song } from "./daemon/library";
 import { safeFetch } from "./connection";
 
@@ -131,8 +131,8 @@ export async function sourceFromTrack(track: Track): Promise<string> {
     return `https://youtube.com/watch?v=${videoId}`;
 }
 
-async function tracksFromId(id: number, artistName: string): Promise<TaskResult> {
-    const result = await fetch(`https://itunes.apple.com/lookup?id=${id}&entity=song`)
+export async function tracksFromAlbum(album: Album): Promise<TaskResult> {
+    const result = await fetch(`https://itunes.apple.com/lookup?id=${album.id}&entity=song`);
     const json = await result.json() as Record<string, any>;
 
     if (!result.ok) {
@@ -143,12 +143,11 @@ async function tracksFromId(id: number, artistName: string): Promise<TaskResult>
     }
 
     const response: Record<string, any>[] = json.results;
-    console.log(response)
 
     const tracks: Track[] = response
         .filter(e =>
             e.wrapperType == "track" &&
-            e.artistName == artistName
+            e.artistName == album.artist.name
         )
         .map(e => {
             return {
@@ -174,10 +173,67 @@ async function tracksFromId(id: number, artistName: string): Promise<TaskResult>
     };
 }
 
-export function tracksFromAlbum(album: Album): Promise<TaskResult> {
-    return tracksFromId(album.id, album.artist.name);
+async function albumsFromArtist(artist: Artist): Promise<TaskResult> {
+    const result = await fetch(`https://itunes.apple.com/lookup?id=${artist.id}&entity=album`);
+    const json = await result.json() as Record<string, any>;
+
+    if (!result.ok) {
+        return {
+            success: false,
+            error: json.error
+        };
+    }
+
+    const response: Record<string, any>[] = json.results;
+
+    const albums: Album[] = response
+        .filter(e =>
+            e.wrapperType == "collection" &&
+            e.artistName == artist.name
+        )
+        .map(e => {
+            return {
+                id: e.collectionId,
+                name: e.collectionName,
+                artist: {
+                    id: e.artistId,
+                    name: e.artistName
+                }
+            };
+        }
+    );
+
+    return {
+        success: true,
+        value: albums
+    };
 }
 
-export function tracksFromArtist(artist: Artist): Promise<TaskResult> {
-    return tracksFromId(artist.id, artist.name);
+export async function tracksFromArtist(artist: Artist): Promise<TaskResult> {
+    console.log("Fetching albums...");
+
+    const albumsResult = await albumsFromArtist(artist);
+    if (!albumsResult.success) return albumsResult;
+
+    const albums = albumsResult.value as Album[];
+    const tracks: Track[] = [];
+
+    await forEachConcurrent(albums, async (album) => {
+        const tracksResult = await tracksFromAlbum(album);
+
+        if (!tracksResult.success) {
+            console.error(`Failed to fetch tracks from album: ${tracksResult.error}`);
+            return;
+        }
+
+        const albumTracks = tracksResult.value as Track[];
+        tracks.push(...albumTracks);
+
+        console.log(`Fetched tracks from album: ${album.name}`);
+    });
+
+    return {
+        success: true,
+        value: tracks
+    };
 }

@@ -3,7 +3,7 @@ import type { Song } from "./daemon/library";
 import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop } from "./connection";
 import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "./resolver";
 import { addSong, captureTrack, editSong } from "./helpers";
-import { runWithConcurrency as forEachConcurrent, type TaskResult } from "./task";
+import { forEachConcurrent as forEachConcurrent, type TaskResult } from "./task";
 import { styleText } from "node:util";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
@@ -284,7 +284,7 @@ async function capture<T extends Name>(
     const tracks = tracksResult.value as Track[];
 
     // Capture songs
-    await forEachConcurrent(tracks, 10, async (track) => {
+    await forEachConcurrent(tracks, async (track) => {
         console.log(`Capturing song: ${track.name}`);
         const captureResult = await captureTrack(track);
 

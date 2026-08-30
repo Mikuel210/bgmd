@@ -1,10 +1,12 @@
+const CONCURRENT_TASKS = 10;
+
 export interface TaskResult {
     success: boolean,
     value?: any,
     error?: string
 }
 
-export async function runWithConcurrency<T>(items: T[], limit: number, task: (item: T) => Promise<void>): Promise<void> {
+export async function forEachConcurrent<T>(items: T[], task: (item: T) => Promise<void>): Promise<void> {
     let index = 0;
 
     async function worker() {
@@ -14,6 +16,6 @@ export async function runWithConcurrency<T>(items: T[], limit: number, task: (it
         }
     }
 
-    const workers = Array.from({ length: Math.min(limit, items.length) }, () => worker());
+    const workers = Array.from({ length: Math.min(CONCURRENT_TASKS, items.length) }, () => worker());
     await Promise.all(workers);
 }
