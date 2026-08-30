@@ -3,7 +3,8 @@ import type { Song } from "./daemon/library";
 import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop } from "./connection";
 import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "./resolver";
 import { addSong, captureTrack, editSong } from "./helpers";
-import { runWithConcurrency as forEachConcurrent } from "./task";
+import { runWithConcurrency as forEachConcurrent, type TaskResult } from "./task";
+import { styleText } from "node:util";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");
@@ -214,197 +215,128 @@ export async function stop(args: Argument[], flags: Flag[]): Promise<number> {
     return 0;
 }
 
-export async function captureSong(args: Argument[], flags: Flag[]): Promise<number> {
-    // Search song
-    const query = args[0]!.value as string;
-    const searchResult = await searchTracks(query);
+interface Name {
+    name: string
+}
+
+async function capture<T extends Name>(
+    query: string,
+    search: (query: string) => Promise<TaskResult>,
+    promptName: string,
+    stringify: (entry: T) => string,
+    getTracks: (entry: T) => Promise<TaskResult>)
+    : Promise<number>
+{
+    const searchResult = await search(query);
 
     if (!searchResult.success) {
         console.error(searchResult.error);
         return 1;
     }
 
-    const tracks = searchResult.value as Track[];
+    const entries = searchResult.value as T[];
 
-    for (let i = 0; i < tracks.length; i++) {
-        const track = tracks[i]!;
-        console.log(`${i + 1}. ${track.album.artist.name} - ${track.name} (${track.album.name})`);
+    // Check for exact match
+    let entry = entries.find(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
+
+    if (!entry) {
+        // Prompt options
+        for (let i = 0; i < entries.length; i++) {
+            const entry = entries[i]!;
+            console.log(`${i + 1}. ${stringify(entry)}`);
+        }
+
+        const range = `(1 - ${entries.length})`;
+        const input = prompt(`\nSelect ${promptName} to add ${range}:`) ?? "";
+        let number;
+
+        try {
+            number = parseInt(input);
+        } catch (e) {
+            console.error(`Value must be a number ${range}`);
+            return 1;
+        }
+
+        // Validate range
+        if (number < 1) {
+            console.error("Value must be greater than 0");
+            return 1;
+        }
+
+        if (number > entries.length) {
+            console.error(`Value must be lower than ${entries.length + 1}`);
+            return 1;
+        }
+
+        entry = entries[number - 1]!;
+    } else {
+        console.log(`Exact match found: ${stringify(entry)}`);
     }
 
-    // Validate input
-    const range = `(1 - ${tracks.length}):`;
-    const input = prompt(`\nSelect a song to add ${range}`) ?? "";
-    let number;
+    // Fetch tracks
+    const tracksResult = await getTracks(entry);
 
-    try {
-        number = parseInt(input);
-    } catch {
-        console.error(`Value must be a number ${range}`);
+    if (!tracksResult.success) {
+        console.error(tracksResult.error);
         return 1;
     }
 
-    // Validate range
-    if (number < 1) {
-        console.error("Value must be greater than 0");
-        return 1;
-    }
+    const tracks = tracksResult.value as Track[];
 
-    if (number > tracks.length) {
-        console.error(`Value must be lower than ${tracks.length + 1}`);
-        return 1;
-    }
+    // Capture songs
+    await forEachConcurrent(tracks, 10, async (track) => {
+        console.log(`Capturing song: ${track.name}`);
+        const captureResult = await captureTrack(track);
 
-    const track = tracks[number - 1]!;
+        if (!captureResult.success) {
+            console.error(`${captureResult.error}: ${track.name}`);
+            return;
+        }
 
-    // Capture song
-    console.log(`Capturing song: ${track.album.artist.name} - ${track.name}`);
-    const captureResult = await captureTrack(track);
-
-    if (!captureResult.success) {
-        console.error(captureResult);
-        return 1;
-    }
-
-    const captureJson = captureResult.value as Record<string, any>;
-    console.log(`Song captured: ${stringifySong(captureJson.id, captureJson.song)}`);
+        const captureJson = captureResult.value as Record<string, any>;
+        console.log(styleText("green", `Song captured: ${stringifySong(captureJson.id, captureJson.song)}`));
+    });
 
     return 0;
+}
+
+export async function captureSong(args: Argument[], flags: Flag[]): Promise<number> {
+    const query = args[0]!.value as string;
+
+    return await capture<Track>(
+        query,
+        searchTracks,
+        "a song",
+        (track) => `${track.album.artist.name} - ${track.name} (${track.album.name})`,
+        async (track) => {
+            return {
+                success: true,
+                value: track
+            }
+        }
+    );
 }
 
 export async function captureAlbum(args: Argument[], flags: Flag[]): Promise<number> {
-    // Search album
     const query = args[0]!.value as string;
-    const searchResult = await searchAlbums(query);
 
-    if (!searchResult.success) {
-        console.error(searchResult.error);
-        return 1;
-    }
-
-    const albums = searchResult.value as Album[];
-
-    for (let i = 0; i < albums.length; i++) {
-        const album = albums[i]!;
-        console.log(`${i + 1}. ${album.artist.name} - ${album.name}`);
-    }
-
-    // Validate input
-    const range = `(1 - ${albums.length})`;
-    const input = prompt(`\nSelect an album to add ${range}:`) ?? "";
-    let number;
-
-    try {
-        number = parseInt(input);
-    } catch (e) {
-        console.error(`Value must be a number ${range}`);
-        return 1;
-    }
-
-    // Validate range
-    if (number < 1) {
-        console.error("Value must be greater than 0");
-        return 1;
-    }
-
-    if (number > albums.length) {
-        console.error(`Value must be lower than ${albums.length + 1}`);
-        return 1;
-    }
-
-    const album = albums[number - 1]!;
-
-    // Fetch tracks
-    const tracksResult = await tracksFromAlbum(album);
-
-    if (!tracksResult.success) {
-        console.error(tracksResult.error);
-        return 1;
-    }
-
-    const tracks = tracksResult.value as Track[];
-
-    // Capture songs
-    await forEachConcurrent(tracks, 3, async (track) => {
-        console.log(`Capturing song: ${track.album.artist.name} - ${track.name}`);
-        const captureResult = await captureTrack(track);
-
-        if (!captureResult.success) {
-            console.error(`${track.name}: ${captureResult.error}`);
-            return;
-        }
-
-        const captureJson = captureResult.value as Record<string, any>;
-        console.log(`Song captured: ${stringifySong(captureJson.id, captureJson.song)}`);
-    });
-
-    return 0;
+    return await capture<Album>(
+        query,
+        searchAlbums,
+        "an album",
+        (album) => `${album.artist.name} - ${album.name}`,
+        tracksFromAlbum
+    );
 }
 
 export async function captureArtist(args: Argument[], flags: Flag[]): Promise<number> {
-    // Search album
     const query = args[0]!.value as string;
-    const searchResult = await searchArtists(query);
 
-    if (!searchResult.success) {
-        console.error(searchResult.error);
-        return 1;
-    }
-
-    const artists = searchResult.value as Artist[];
-
-    for (let i = 0; i < artists.length; i++) {
-        const artist = artists[i]!;
-        console.log(`${i + 1}. ${artist.name}`);
-    }
-
-    // Validate input
-    const range = `(1 - ${artists.length})`;
-    const input = prompt(`\nSelect an artist to add ${range}:`) ?? "";
-    let number;
-
-    try {
-        number = parseInt(input);
-    } catch (e) {
-        console.error(`Value must be a number ${range}`);
-        return 1;
-    }
-
-    // Validate range
-    if (number < 1) {
-        console.error("Value must be greater than 0");
-        return 1;
-    }
-
-    if (number > artists.length) {
-        console.error(`Value must be lower than ${artists.length + 1}`);
-        return 1;
-    }
-
-    const artist = artists[number - 1]!;
-
-    // Fetch tracks
-    const tracksResult = await tracksFromArtist(artist);
-
-    if (!tracksResult.success) {
-        console.error(tracksResult.error);
-        return 1;
-    }
-
-    const tracks = tracksResult.value as Track[];
-
-    // Capture songs
-    await forEachConcurrent(tracks, 3, async (track) => {
-        console.log(`Capturing song: ${track.album.artist.name} - ${track.name}`);
-        const captureResult = await captureTrack(track);
-
-        if (!captureResult.success) {
-            console.error(`${track.name}: ${captureResult.error}`);
-            return;
-        }
-
-        const captureJson = captureResult.value as Record<string, any>;
-        console.log(`Song captured: ${stringifySong(captureJson.id, captureJson.song)}`);
-    });
-
-    return 0;
+    return await capture<Artist>(
+        query,
+        searchArtists,
+        "an artist",
+        (artist) => artist.name,
+        tracksFromArtist
+    );
 }

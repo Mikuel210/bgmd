@@ -143,6 +143,7 @@ async function tracksFromId(id: number, artistName: string): Promise<TaskResult>
     }
 
     const response: Record<string, any>[] = json.results;
+    console.log(response)
 
     const tracks: Track[] = response
         .filter(e =>
