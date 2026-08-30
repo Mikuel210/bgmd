@@ -2,7 +2,8 @@ import z from "zod"
 import os from "node:os"
 import path from "node:path"
 
-export const CONFIG_PATH = path.join(os.homedir(), ".config/bgmd")
+export const HOME_PATH = os.homedir();
+export const CONFIG_PATH = path.join(HOME_PATH, ".config/bgmd");
 
 export async function load<T>(fileName: string, schema: z.ZodType): Promise<z.ZodSafeParseResult<T>> {
     const file = Bun.file(path.join(CONFIG_PATH, fileName));

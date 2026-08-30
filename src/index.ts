@@ -1,4 +1,4 @@
-import { captureAlbum, captureArtist, captureSong, library, play, root, songAdd, songEdit, songRemove, songShow, stop } from "./commands";
+import { captureAlbum, captureArtist, captureSong, library, play, pull, root, songAdd, songEdit, songRemove, songShow, stop } from "./commands";
 import { handle, registerCommand } from "./commands/handler"
 import { validateLocalSource, validatePositiveInteger, validateSongId, validateString, validateYouTubeSource } from "./commands/validate";
 
@@ -248,6 +248,14 @@ registerCommand({
     ],
     flags: [],
     run: captureArtist
+});
+
+registerCommand({
+    route: ["pull"],
+    description: "Download all missing songs in the library",
+    args: [],
+    flags: [],
+    run: pull
 });
 
 process.exit(await handle(args));

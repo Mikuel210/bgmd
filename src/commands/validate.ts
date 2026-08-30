@@ -2,16 +2,9 @@ import { get_library } from "../connection";
 import type { Library, Song } from "../daemon/library";
 import type { TaskResult } from "../task";
 
-// Constants
-const AUDIO_EXTENSIONS = [
-    '.mp3', '.wav', '.ogg', '.flac', '.aac',
-    '.m4a', '.opus', '.webm', '.oga', '.wma'
-];
-
 const HTTP_PREFIXES = ["https://www.", "https://", "http://www.", "http://"];
 const YOUTUBE_PREFIXES = ["youtube.com/watch?v=", "youtu.be/"];
 
-// Validate functions
 export async function validateString(input: string): Promise<TaskResult> {
     return {
         success: true,
@@ -46,15 +39,11 @@ export async function validateSongId(input: string): Promise<TaskResult> {
     }
 }
 
-function isAudioFile(path: string): boolean {
-    return AUDIO_EXTENSIONS.some(e => path.toLowerCase().endsWith(e));
-}
-
 export async function validateLocalSource(input: string): Promise<TaskResult> {
     const file = Bun.file(input);
 
     if (await file.exists()) {
-        if (isAudioFile(input)) {
+        if (file.type.startsWith("audio")) {
             return {
                 success: true,
                 value: input

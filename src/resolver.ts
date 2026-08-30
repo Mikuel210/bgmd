@@ -1,5 +1,4 @@
 import { forEachConcurrent, type TaskResult } from "./task";
-import type { Song } from "./daemon/library";
 import { safeFetch } from "./connection";
 
 const LIMIT = 5;
@@ -123,12 +122,25 @@ export async function searchTracks(query: string, limit: number = LIMIT): Promis
     }
 }
 
-export async function sourceFromTrack(track: Track): Promise<string> {
+export async function sourceFromTrack(track: Track): Promise<TaskResult> {
     const url = `https://music.youtube.com/search?q=${encodeURIComponent(track.album.artist.name)}+-+${encodeURIComponent(track.name)}]`;
-    const process = Bun.spawn(["yt-dlp", "-I", "1", url, "--get-id"]);
+    const process = Bun.spawn(["yt-dlp", "-I", "1", url, "--get-id"], { stderr: "ignore" });
+
+    const exitCode = await process.exited;
+
+    if (exitCode != 0) {
+        return {
+            success: false,
+            error: `Process exited with code ${exitCode}`
+        };
+    }
 
     const videoId = (await process.stdout.text()).trim();
-    return `https://youtube.com/watch?v=${videoId}`;
+
+    return {
+        success: true,
+        value: `https://youtube.com/watch?v=${videoId}`
+    };
 }
 
 export async function tracksFromAlbum(album: Album): Promise<TaskResult> {

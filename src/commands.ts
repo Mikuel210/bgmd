@@ -1,19 +1,16 @@
-import type { Argument, Flag } from "./commands/command";
-import type { Song } from "./daemon/library";
-import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop } from "./connection";
-import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "./resolver";
-import { addSong, captureTrack, editSong } from "./helpers";
-import { forEachConcurrent as forEachConcurrent, type TaskResult } from "./task";
 import { styleText } from "node:util";
+import type { Argument, Flag } from "./commands/command";
+import type { Library, Song } from "./daemon/library";
+import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop, put_librarySongs } from "./connection";
+import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "./resolver";
+import { addSong, capture, editSong, getSongId, stringifySong } from "./helpers";
+import { forEachConcurrent } from "./task";
+import { downloadSong } from "./downloader";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");
     console.log("See: bgmctl --help");
     return 0;
-}
-
-function stringifySong(id: string, song: Song): string {
-    return `[${id}] ${song.artist} - ${song.name} (${song.album})`;
 }
 
 export async function library(args: Argument[], flags: Flag[]): Promise<number> {
@@ -215,91 +212,6 @@ export async function stop(args: Argument[], flags: Flag[]): Promise<number> {
     return 0;
 }
 
-interface Name {
-    name: string
-}
-
-async function capture<T extends Name>(
-    query: string,
-    search: (query: string) => Promise<TaskResult>,
-    promptName: string,
-    stringify: (entry: T) => string,
-    getTracks: (entry: T) => Promise<TaskResult>)
-    : Promise<number>
-{
-    const searchResult = await search(query);
-
-    if (!searchResult.success) {
-        console.error(searchResult.error);
-        return 1;
-    }
-
-    const entries = searchResult.value as T[];
-
-    // Check for exact match
-    let entry = entries.find(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
-
-    if (!entry) {
-        // Prompt options
-        for (let i = 0; i < entries.length; i++) {
-            const entry = entries[i]!;
-            console.log(`${i + 1}. ${stringify(entry)}`);
-        }
-
-        const range = `(1 - ${entries.length})`;
-        const input = prompt(`\nSelect ${promptName} to add ${range}:`) ?? "";
-        let number;
-
-        try {
-            number = parseInt(input);
-        } catch (e) {
-            console.error(`Value must be a number ${range}`);
-            return 1;
-        }
-
-        // Validate range
-        if (number < 1) {
-            console.error("Value must be greater than 0");
-            return 1;
-        }
-
-        if (number > entries.length) {
-            console.error(`Value must be lower than ${entries.length + 1}`);
-            return 1;
-        }
-
-        entry = entries[number - 1]!;
-    } else {
-        console.log(`Exact match found: ${stringify(entry)}`);
-    }
-
-    // Fetch tracks
-    const tracksResult = await getTracks(entry);
-
-    if (!tracksResult.success) {
-        console.error(tracksResult.error);
-        return 1;
-    }
-
-    const tracks = tracksResult.value as Track[];
-
-    // Capture songs
-    await forEachConcurrent(tracks, async (track) => {
-        console.log(`Capturing song: ${track.name}`);
-        const captureResult = await captureTrack(track);
-
-        if (!captureResult.success) {
-            console.error(`${captureResult.error}: ${track.name}`);
-            return;
-        }
-
-        const captureJson = captureResult.value as Record<string, any>;
-        console.log(styleText("green", `Song captured: ${stringifySong(captureJson.id, captureJson.song)}`));
-    });
-
-    return 0;
-}
-
 export async function captureSong(args: Argument[], flags: Flag[]): Promise<number> {
     const query = args[0]!.value as string;
 
@@ -339,4 +251,44 @@ export async function captureArtist(args: Argument[], flags: Flag[]): Promise<nu
         (artist) => artist.name,
         tracksFromArtist
     );
+}
+
+export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
+    const libraryResult = await get_library();
+    const libraryJson = await libraryResult.json() as Record<string, any>;
+
+    if (!libraryResult.ok) {
+        console.error(`Failed to fetch library: ${libraryJson.error}`);
+        return 1;
+    }
+
+    const library = libraryJson as Library;
+    const toPull = Object.values(library.songs).filter(e => e.youtubeSource && !e.localSource);
+
+    await forEachConcurrent(toPull, async (song) => {
+        const id = getSongId(library, song);
+        const songString = stringifySong(id, song);
+
+        console.log(`Downloading song: ${songString}`);
+        const downloadResult = await downloadSong(song);
+
+        if (!downloadResult.success) {
+            console.error(`${downloadResult.error}: ${songString}`);
+            return;
+        }
+
+        // Update source
+        const path = downloadResult.value as string;
+        const editResult = await put_librarySongs(id, { ...song, localSource: path });
+        const editJson = await editResult.json() as Record<string, any>;
+
+        if (!editResult.ok) {
+            console.error(`Failed to edit song: ${editJson.localSource}`);
+            return;
+        }
+
+        console.log(styleText("green", `Song downloaded: ${songString}`));
+    });
+
+    return 0;
 }

@@ -1,15 +1,17 @@
 import type { Song } from "./library";
 import { serve } from "./server";
-import { songsFromArtist } from "../resolver"
 
 let currentSong: Song | null = null;
 let currentProcess: Bun.Subprocess | null = null;
 
 export function play(song: Song): Response {
-    if (song.youtubeSource) {
-        currentSong = song;
+    if (song.localSource)
+        currentProcess = Bun.spawn(["mpv", song.localSource, "--aid=1"]);
+    else if (song.youtubeSource)
         currentProcess = Bun.spawn(["mpv", song.youtubeSource, "--no-video", "--aid=1"]);
 
+    if (song.localSource || song.youtubeSource) {
+        currentSong = song;
         return Response.json({ playing: true, song }, { status: 200 });
     }
 
