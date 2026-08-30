@@ -1,15 +1,25 @@
 import { get_library } from "../connection";
 import type { Library, Song } from "../daemon/library";
-import type { ValidateResponse } from "./command";
+import type { TaskResult } from "../task";
 
-export async function validateString(input: string): Promise<ValidateResponse> {
+// Constants
+const AUDIO_EXTENSIONS = [
+    '.mp3', '.wav', '.ogg', '.flac', '.aac',
+    '.m4a', '.opus', '.webm', '.oga', '.wma'
+];
+
+const HTTP_PREFIXES = ["https://www.", "https://", "http://www.", "http://"];
+const YOUTUBE_PREFIXES = ["youtube.com/watch?v=", "youtu.be/"];
+
+// Validate functions
+export async function validateString(input: string): Promise<TaskResult> {
     return {
         success: true,
         value: input
     };
 }
 
-export async function validateSongId(input: string): Promise<ValidateResponse> {
+export async function validateSongId(input: string): Promise<TaskResult> {
     const response = await get_library();
     const json = await response.json() as Record<string, any>;
 
@@ -37,15 +47,10 @@ export async function validateSongId(input: string): Promise<ValidateResponse> {
 }
 
 function isAudioFile(path: string): boolean {
-    const audioExtensions = [
-        '.mp3', '.wav', '.ogg', '.flac', '.aac',
-        '.m4a', '.opus', '.webm', '.oga', '.wma'
-    ];
-
-    return audioExtensions.some(e => path.toLowerCase().endsWith(e));
+    return AUDIO_EXTENSIONS.some(e => path.toLowerCase().endsWith(e));
 }
 
-export async function validateLocalSource(input: string): Promise<ValidateResponse> {
+export async function validateLocalSource(input: string): Promise<TaskResult> {
     const file = Bun.file(input);
 
     if (await file.exists()) {
@@ -69,18 +74,16 @@ export async function validateLocalSource(input: string): Promise<ValidateRespon
 }
 
 function cleanYouTubeUrl(input: string): string | null {
-    const httpPrefixes = ["https://www.", "https://", "http://www.", "http://"];
-    const youtubePrefixes = ["youtube.com/watch?v=", "youtu.be/"];
     let isYouTubeUrl = false;
     let videoId = input;
 
     // Remove HTTP and YouTube prefixes
-    for (const prefix of httpPrefixes) {
+    for (const prefix of HTTP_PREFIXES) {
         if (!videoId.startsWith(prefix)) continue;
         videoId = videoId.slice(prefix.length);
     }
 
-    for (const prefix of youtubePrefixes) {
+    for (const prefix of YOUTUBE_PREFIXES) {
         if (!videoId.startsWith(prefix)) continue;
 
         videoId = videoId.slice(prefix.length);
@@ -100,7 +103,7 @@ function cleanYouTubeUrl(input: string): string | null {
     return null;
 }
 
-export async function validateYouTubeSource(input: string): Promise<ValidateResponse> {
+export async function validateYouTubeSource(input: string): Promise<TaskResult> {
     const url = cleanYouTubeUrl(input);
 
     if (url) {
@@ -116,7 +119,7 @@ export async function validateYouTubeSource(input: string): Promise<ValidateResp
     };
 }
 
-export async function validatePositiveInteger(input: string): Promise<ValidateResponse> {
+export async function validatePositiveInteger(input: string): Promise<TaskResult> {
     try {
         const number = parseInt(input);
 

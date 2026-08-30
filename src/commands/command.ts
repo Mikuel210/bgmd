@@ -1,14 +1,10 @@
-export interface ValidateResponse {
-    success: boolean,
-    value?: any,
-    error?: string
-}
+import type { TaskResult } from "../task"
 
 export interface Argument {
     name: string,
     description: string,
     params: boolean,
-    validate: (input: string) => Promise<ValidateResponse>
+    validate: (input: string) => Promise<TaskResult>
     value?: any,
 }
 
@@ -18,7 +14,7 @@ export interface Flag {
     description: string,
     switch: boolean,
     params: boolean,
-    validate: (input: string) => Promise<ValidateResponse>,
+    validate: (input: string) => Promise<TaskResult>,
     value?: any
 }
 

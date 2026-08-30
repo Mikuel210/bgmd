@@ -1,7 +1,7 @@
 import z from "zod"
 import { load, save } from "../store"
 
-const libraryFileName = "library.json"
+const LIBRARY_FILENAME = "library.json"
 
 const SongState = z.enum({
     Captured: 0,
@@ -36,9 +36,9 @@ export type Song = z.infer<typeof SongSchema>;
 export type Library = z.infer<typeof LibrarySchema>;
 
 export function loadLibrary(): Promise<z.ZodSafeParseResult<Library>> {
-    return load<Library>(libraryFileName, LibrarySchema);
+    return load<Library>(LIBRARY_FILENAME, LibrarySchema);
 }
 
 export function saveLibrary(library: Library): Promise<void> {
-    return save<Library>(libraryFileName, library);
+    return save<Library>(LIBRARY_FILENAME, library);
 }

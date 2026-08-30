@@ -1,7 +1,7 @@
 import type { Command, Flag } from "./command";
 import { commands, isRoot } from "./handler";
 
-const extraSpaces = 3;
+const EXTRA_SPACES = 3;
 
 export function showHelp(command: Command): void {
     console.log(`Usage: ${getUsage(command)}`);
@@ -9,7 +9,7 @@ export function showHelp(command: Command): void {
 
     if (command.args.length > 0) {
         console.log("\nArguments:");
-        const spaces = Math.max(...command.args.map(e => e.name.length)) + extraSpaces;
+        const spaces = Math.max(...command.args.map(e => e.name.length)) + EXTRA_SPACES;
 
         for (const argument of command.args) {
             const spaceString = ' '.repeat(spaces - argument.name.length);
@@ -30,7 +30,7 @@ export function showHelp(command: Command): void {
             names[name] = flag;
         }
 
-        const spaces = Math.max(...Object.keys(names).map(e => e.length)) + extraSpaces;
+        const spaces = Math.max(...Object.keys(names).map(e => e.length)) + EXTRA_SPACES;
 
         for (const flag of command.flags) {
             const name = Object.keys(names).find(e => names[e] == flag)!;
@@ -51,7 +51,7 @@ export function showHelp(command: Command): void {
             routes[name] = command;
         }
 
-        const spaces = Math.max(...Object.keys(routes).map(e => e.length)) + extraSpaces;
+        const spaces = Math.max(...Object.keys(routes).map(e => e.length)) + EXTRA_SPACES;
 
         for (const command of subcommands) {
             const route = Object.keys(routes).find(e => routes[e] == command)!;
