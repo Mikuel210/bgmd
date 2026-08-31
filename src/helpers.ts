@@ -1,17 +1,13 @@
-import { sleep } from "bun";
 import { get_library, post_librarySongs, put_librarySongs } from "./connection";
-import type { Library, Song } from "./daemon/library";
+import type { Library, Song, SongWrapper } from "./daemon/library";
 import { sourceFromTrack, type Track } from "./resolver";
 import { createSpinner, forEachConcurrent, reserveLines, type TaskResult } from "./task";
 
 const CONCURRENT_TASKS = 10;
 
-export function stringifySong(id: string, song: Song): string {
-    return `[${id}] ${song.artist} - ${song.name} (${song.album})`;
-}
-
-export function getSongId(library: Library, song: Song): string {
-    return Object.keys(library.songs).filter(e => library.songs[e] == song)[0]!;
+export function stringifySong(wrapper: SongWrapper): string {
+    const song = wrapper.song;
+    return `[${wrapper.id}] ${song.artist} - ${song.name} (${song.album})`;
 }
 
 function isValidTrackNumber(songs: Song[], song: Song): boolean {
@@ -36,7 +32,7 @@ export async function addSong(song: Song, explicitTrackNumber: boolean): Promise
     }
 
     const library = libraryJson as Library;
-    const songs = Object.values(library.songs);
+    const songs: Song[] = library.songWrappers.map(e => e.song);
 
     if (!isValidTrackNumber(songs, song)) {
         if (explicitTrackNumber) {
@@ -47,7 +43,7 @@ export async function addSong(song: Song, explicitTrackNumber: boolean): Promise
         }
 
         // Pick next valid track number
-        const discSongs = Object.values(library.songs).filter(e =>
+        const discSongs = songs.filter(e =>
             e.artist == song.artist &&
             e.album == song.album &&
             e.discNumber == song.discNumber
@@ -84,7 +80,7 @@ export async function addSong(song: Song, explicitTrackNumber: boolean): Promise
     }
 }
 
-export async function editSong(id: string, song: Song): Promise<TaskResult> {
+export async function editSong(songWrapper: SongWrapper): Promise<TaskResult> {
     // Validate track number
     const libraryResult = await get_library();
     const libraryJson = await libraryResult.json() as Record<string, any>;
@@ -97,9 +93,9 @@ export async function editSong(id: string, song: Song): Promise<TaskResult> {
     }
 
     const library = libraryJson as Library;
-    const songs = Object.values(library.songs).filter(e => getSongId(library, e) != id);
+    const songs: Song[] = library.songWrappers.filter(e => e.id != songWrapper.id).map(e => e.song);
 
-    if (!isValidTrackNumber(songs, song)) {
+    if (!isValidTrackNumber(songs, songWrapper.song)) {
         return {
             success: false,
             error: `A song with the same track number is already in the disc`
@@ -107,7 +103,7 @@ export async function editSong(id: string, song: Song): Promise<TaskResult> {
     }
 
     // Save changes
-    const editResult = await put_librarySongs(id, song);
+    const editResult = await put_librarySongs(songWrapper);
 
     if (!editResult.ok) {
         const editJson = await editResult.json() as Record<string, any>;
@@ -231,7 +227,8 @@ export async function capture<T extends Name>(
         }
 
         const captureJson = captureResult.value as Record<string, any>;
-        spinner.succeed(`Song captured: ${stringifySong(captureJson.id, captureJson.song)}`);
+        const songWrapper = captureJson.wrapper as SongWrapper;
+        spinner.succeed(`Song captured: ${stringifySong(songWrapper)}`);
     });
 
     return 0;

@@ -1,4 +1,4 @@
-import type { Song } from "./daemon/library"
+import type { Song, SongWrapper } from "./daemon/library"
 const DAEMON_URL = "http://127.0.0.1:8686/"
 
 export async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
@@ -27,10 +27,10 @@ export async function post_librarySongs(song: Song): Promise<Response> {
     });
 }
 
-export async function put_librarySongs(id: string, song: Song): Promise<Response> {
+export async function put_librarySongs(songWrapper: SongWrapper): Promise<Response> {
     return await safeFetch(DAEMON_URL + "library/songs", {
         method: "PUT",
-        body: JSON.stringify({ id, song })
+        body: JSON.stringify(songWrapper)
     });
 }
 
@@ -46,4 +46,8 @@ export async function get_play(id: string): Promise<Response> {
 
 export async function get_stop(): Promise<Response> {
     return await safeFetch(DAEMON_URL + "stop");
+}
+
+export async function get_status(): Promise<Response> {
+    return await safeFetch(DAEMON_URL + "status");
 }

@@ -1,4 +1,4 @@
-import type { Song } from "./daemon/library";
+import type { Song, SongWrapper } from "./daemon/library";
 import { HOME_PATH } from "./store";
 import type { TaskResult } from "./task";
 import path from "node:path";
@@ -18,7 +18,9 @@ function sanitize(input: string): string {
         .replace(WINDOWS, REPLACEMENT);
 }
 
-export async function downloadSong(song: Song): Promise<TaskResult> {
+export async function downloadSong(songWrapper: SongWrapper): Promise<TaskResult> {
+    const song = songWrapper.song;
+
     if (!song.youtubeSource) {
         return {
             success: false,

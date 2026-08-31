@@ -1,31 +1,53 @@
-import type { Song } from "./library";
+import type { SongWrapper } from "./library";
 import { serve } from "./server";
 
-let currentSong: Song | null = null;
-let currentProcess: Bun.Subprocess | null = null;
+export interface Status {
+    playing: boolean,
+    songWrapper?: SongWrapper
+}
 
-export function play(song: Song): Response {
+let status: Status = { playing: false };
+let process: Bun.Subprocess | null = null;
+
+export function play(songWrapper: SongWrapper): Response {
+    const song = songWrapper.song;
     stop();
 
     if (song.localSource) {
-        currentProcess = Bun.spawn(["mpv", song.localSource, "--aid=1"]);
+        process = Bun.spawn(["mpv", song.localSource, "--aid=1"]);
     } else if (song.youtubeSource) {
-        currentProcess = Bun.spawn(["mpv", song.youtubeSource, "--no-video", "--aid=1"]);
+        process = Bun.spawn(["mpv", song.youtubeSource, "--no-video", "--aid=1"]);
     }
 
     if (song.localSource || song.youtubeSource) {
-        currentSong = song;
-        return Response.json({ playing: true, song }, { status: 200 });
+        status = {
+            playing: true,
+            songWrapper: songWrapper
+        };
+
+        return Response.json(status, { status: 200 });
     }
 
     return Response.json({ error: "No source available" }, { status: 500 });
 }
 
 export function stop(): void {
-    if (!currentProcess) return;
+    if (!process) return;
+    process.kill();
 
-    currentProcess.kill();
-    currentSong = null;
+    status = {
+        playing: false
+    };
+}
+
+export function getStatus(): Status {
+    if (process?.exitCode) {
+        status = {
+            playing: false
+        };
+    }
+
+    return status;
 }
 
 serve();

@@ -1,5 +1,5 @@
 import { get_library } from "../connection";
-import type { Library, Song } from "../daemon/library";
+import type { Library, Song, SongWrapper } from "../daemon/library";
 import type { TaskResult } from "../task";
 
 const HTTP_PREFIXES = ["https://www.", "https://", "http://www.", "http://"];
@@ -24,9 +24,9 @@ export async function validateSongId(input: string): Promise<TaskResult> {
     }
 
     const library = json as Library;
-    const songs = library.songs as Record<string, Song>;
+    const songWrappers = library.songWrappers;
 
-    if (input in songs) {
+    if (songWrappers.some(e => e.id == input)) {
         return {
             success: true,
             value: input

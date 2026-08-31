@@ -3,6 +3,7 @@ import { load, save } from "../store"
 
 const LIBRARY_FILENAME = "library.json"
 
+// Schemas
 const SongState = z.enum({
     Captured: 0,
     Reviewed: 1
@@ -21,6 +22,11 @@ export const SongSchema = z.object({
     tags: z.array(z.string())
 });
 
+export const SongWrapperSchema = z.object({
+    id: z.string(),
+    song: SongSchema
+});
+
 export const DimensionSchema = z.object({
     name: z.string(),
     min: z.number(),
@@ -29,12 +35,15 @@ export const DimensionSchema = z.object({
 
 export const LibrarySchema = z.object({
     dimensions: z.array(DimensionSchema).default([]),
-    songs: z.record(z.string(), SongSchema).default({})
+    songWrappers: z.array(SongWrapperSchema).default([])
 });
 
+// Types
 export type Song = z.infer<typeof SongSchema>;
+export type SongWrapper = z.infer<typeof SongWrapperSchema>;
 export type Library = z.infer<typeof LibrarySchema>;
 
+// Load and save library
 export function loadLibrary(): Promise<z.ZodSafeParseResult<Library>> {
     return load<Library>(LIBRARY_FILENAME, LibrarySchema);
 }

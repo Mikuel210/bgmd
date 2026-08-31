@@ -69,4 +69,3 @@ export function createSpinner(message: string, index: number) {
 // Make sure cursor is shown on exit
 process.on("exit", showCursor);
 process.on("SIGINT", () => { showCursor(); process.exit(130); });
-process.on("uncaughtException", (e) => { showCursor(); throw e; })

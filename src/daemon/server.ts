@@ -1,7 +1,7 @@
 import z from "zod"
-import type { Library, Song } from "./library"
-import { SongSchema, loadLibrary, saveLibrary } from "./library"
-import { play, stop } from "./daemon"
+import type { Library, Song, SongWrapper } from "./library"
+import { SongSchema, SongWrapperSchema, loadLibrary, saveLibrary } from "./library"
+import { getStatus, play, stop } from "./daemon"
 
 export function serve(): void {
     const server = Bun.serve({
@@ -53,27 +53,28 @@ export function serve(): void {
                     // Add song
                     let id = crypto.randomUUID().split('-')[0]!;
 
-                    while (id in library.songs)
+                    while (library.songWrappers.find(e => e.id == id))
                         id = crypto.randomUUID().split('-')[0]!;
 
-                    library.songs[id] = song;
+                    const songWrapper: SongWrapper = { id, song };
+                    library.songWrappers.push(songWrapper);
                     saveLibrary(library);
 
-                    return Response.json({ created: true, id, song }, { status: 201 });
+                    return Response.json({ created: true, wrapper: songWrapper }, { status: 201 });
                 },
 
                 PUT: async (request) => {
-                    const body = await request.json() as Record<string, any>;
-                    const songResult = SongSchema.safeParse(body.song);
+                    const body = await request.json();
+                    const songWrapperResult = SongWrapperSchema.safeParse(body);
 
-                    if (!songResult.success) {
+                    if (!songWrapperResult.success) {
                         return Response.json(
-                            { error: "Invalid song", issues: z.prettifyError(songResult.error!) },
+                            { error: "Invalid song", issues: z.prettifyError(songWrapperResult.error!) },
                             { status: 400 }
                         )
                     }
 
-                    const song = songResult.data as Song;
+                    const songWrapper = songWrapperResult.data as SongWrapper;
 
                     // Validate library
                     const libraryResult = await loadLibrary();
@@ -88,13 +89,17 @@ export function serve(): void {
                     const library = libraryResult.data as Library;
 
                     // Update song
-                    const id = body.id;
+                    const songWrapperIndex = library.songWrappers.findIndex(e => e.id == songWrapper.id);
 
-                    if (id in library.songs) {
-                        library.songs[id] = song;
+                    if (songWrapperIndex != -1) {
+                        library.songWrappers = [
+                            ...library.songWrappers.slice(0, songWrapperIndex),
+                            songWrapper,
+                            ...library.songWrappers.slice(songWrapperIndex + 1)
+                        ];
 
                         await saveLibrary(library);
-                        return Response.json({ updated: true, song }, { status: 200 });
+                        return Response.json({ updated: true, songWrapper }, { status: 200 });
                     }
 
                     return Response.json({ error: "Song not found"}, { status: 404 });
@@ -113,11 +118,9 @@ export function serve(): void {
                     }
 
                     const library = result.data as Library;
+                    const songWrapper = library.songWrappers.find(e => e.id == id);
 
-                    if (id in library.songs) {
-                        return Response.json(library.songs[id], { status: 200 });
-                    }
-
+                    if (songWrapper) return Response.json(songWrapper, { status: 200 });
                     return Response.json({ error: "Song not found"}, { status: 404 });
                 },
 
@@ -133,13 +136,14 @@ export function serve(): void {
                     }
 
                     const library = result.data as Library;
+                    const songIndex = library.songWrappers.findIndex(e => e.id == id);
 
-                    if (id in library.songs) {
-                        const song = library.songs[id];
-                        delete library.songs[id];
+                    if (songIndex != -1) {
+                        const songWrapper = library.songWrappers[songIndex]!;
+                        library.songWrappers.splice(songIndex, 1);
 
                         await saveLibrary(library);
-                        return Response.json({ deleted: true, song }, { status: 200 });
+                        return Response.json({ deleted: true, songWrapper }, { status: 200 });
                     }
 
                     return Response.json({ error: "Song not found" }, { status: 404 });
@@ -157,18 +161,16 @@ export function serve(): void {
                 }
 
                 const library = result.data as Library;
+                const songWrapper = library.songWrappers.find(e => e.id == id);
 
-                if (id in library.songs) {
-                    const song = library.songs[id] as Song;
-                    return play(song);
-                }
-
+                if (songWrapper) return play(songWrapper);
                 return Response.json({ error: "Song not found" }, { status: 404 });
             },
             "/stop": async (request) => {
                 stop();
                 return Response.json({ stopped: true }, { status: 200 });
-            }
+            },
+            "/status": async () => Response.json(getStatus(), { status: 200 }),
         }
     })
 

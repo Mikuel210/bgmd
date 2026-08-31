@@ -1,10 +1,11 @@
 import type { Argument, Flag } from "./commands/command";
-import type { Library, Song } from "./daemon/library";
-import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop, put_librarySongs } from "./connection";
+import type { Library, Song, SongWrapper } from "./daemon/library";
+import { delete_librarySongs, get_library, get_librarySongs, get_play, get_status, get_stop, put_librarySongs } from "./connection";
 import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "./resolver";
-import { addSong, capture, editSong, getSongId, stringifySong } from "./helpers";
+import { addSong, capture, editSong, stringifySong } from "./helpers";
 import { createSpinner, forEachConcurrent, reserveLines } from "./task";
 import { downloadSong } from "./downloader";
+import type { Status } from "./daemon/daemon";
 
 const CONCURRENT_DOWNLOADS = 5;
 
@@ -23,10 +24,10 @@ export async function library(args: Argument[], flags: Flag[]): Promise<number> 
         return 1;
     }
 
-    const songs = json.songs as Record<string, Song>;
+    const songWrappers = json.songWrappers as SongWrapper[];
 
-    for (const [id, song] of Object.entries(songs))
-        console.log(stringifySong(id, song));
+    for (const songWrapper of songWrappers)
+        console.log(stringifySong(songWrapper));
 
     return 0;
 }
@@ -62,14 +63,15 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
     }
 
     const addResult = await addSong(song, flags.some(e => e.longName == "track-number"));
+    const addJson = addResult.value as Record<string, any>;
 
     if (!addResult.success) {
-        console.error(addResult.error);
+        console.error(addJson.error);
         return 1;
     }
 
-    const addJson = addResult.value as Record<string, any>;
-    console.log(`Song added: ${stringifySong(addJson.id, addJson.song)}`);
+    const songWrapper = addJson.wrapper as SongWrapper;
+    console.log(`Song added: ${stringifySong(songWrapper)}`);
 
     return 0;
 }
@@ -84,8 +86,8 @@ export async function songShow(args: Argument[], flags: Flag[]): Promise<number>
         return 1;
     }
 
-    const song = json as Song;
-    console.log(song);
+    const songWrapper = json as SongWrapper;
+    console.log(songWrapper);
 
     return 0;
 }
@@ -101,50 +103,50 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
         return 1;
     }
 
-    const song = songJson as Song;
+    const songWrapper = songJson as SongWrapper;
 
     // Edit song
     let changesMade = false;
 
     for (const flag of flags) {
         if (flag.longName == "name") {
-            song.name = flag.value as string;
+            songWrapper.song.name = flag.value as string;
             changesMade = true;
         }
 
         if (flag.longName == "album") {
-            song.album = flag.value as string;
+            songWrapper.song.album = flag.value as string;
             changesMade = true;
         }
 
         if (flag.longName == "artist") {
-            song.artist = flag.value as string;
+            songWrapper.song.artist = flag.value as string;
             changesMade = true;
         }
 
         if (flag.longName == "disc-number") {
-            song.discNumber = flag.value as number;
+            songWrapper.song.discNumber = flag.value as number;
             changesMade = true;
         }
 
         if (flag.longName == "track-number") {
-            song.trackNumber = flag.value as number;
+            songWrapper.song.trackNumber = flag.value as number;
             changesMade = true;
         }
 
         if (flag.longName == "youtube-source") {
-            song.youtubeSource = flag.value as string;
+            songWrapper.song.youtubeSource = flag.value as string;
             changesMade = true;
         }
 
         if (flag.longName == "local-source") {
-            song.localSource = flag.value as string;
+            songWrapper.song.localSource = flag.value as string;
             changesMade = true;
         }
     }
 
     // Edit song
-    const editResult = await editSong(id, song);
+    const editResult = await editSong(songWrapper);
 
     if (!editResult.success) {
         console.error(editResult.error);
@@ -152,7 +154,7 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
     }
 
     if (changesMade)
-        console.log(`Song updated: ${stringifySong(id, song)}`);
+        console.log(`Song updated: ${stringifySong(songWrapper)}`);
     else
         console.warn("No changes made");
 
@@ -162,11 +164,10 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
 export async function songRemove(args: Argument[], flags: Flag[]): Promise<number> {
     const id = args[0]!.value as string;
     const getResult = await get_librarySongs(id);
+    const getJson = await getResult.json() as Record<string, any>;
 
     if (!getResult.ok) {
-        const getJson = await getResult.json() as Record<string, any>;
-        console.error(`Failed to remove song: ${getJson.error}`);
-
+        console.error(`Failed to fetch song: ${getJson.error}`);
         return 1;
     }
 
@@ -179,10 +180,9 @@ export async function songRemove(args: Argument[], flags: Flag[]): Promise<numbe
         return 1;
     }
 
-    const getJson = await getResult.json() as Record<string, any>;
-    const song = getJson as Song;
+    const songWrapper = getJson as SongWrapper;
+    console.log(`Song removed: ${stringifySong(songWrapper)}`);
 
-    console.log(`Song removed: ${stringifySong(id, song)}`);
     return 0;
 }
 
@@ -196,7 +196,8 @@ export async function play(args: Argument[], flags: Flag[]): Promise<number> {
         return 1;
     }
 
-    console.log(`Now playing: ${stringifySong(id, json.song)}`);
+    const songWrapper = json.songWrapper as SongWrapper;
+    console.log(`Now playing: ${stringifySong(songWrapper)}`);
     return 0;
 }
 
@@ -264,17 +265,15 @@ export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
     }
 
     const library = libraryJson as Library;
-    const toPull = Object.values(library.songs).filter(e => e.youtubeSource && !e.localSource);
+    const toPull = library.songWrappers.filter(e => e.song.youtubeSource && !e.song.localSource);
 
     // Download songs
     reserveLines(Math.min(CONCURRENT_DOWNLOADS, toPull.length));
 
-    await forEachConcurrent(toPull, CONCURRENT_DOWNLOADS, async (song, index) => {
-        const id = getSongId(library, song);
-        const songString = stringifySong(id, song);
-
+    await forEachConcurrent(toPull, CONCURRENT_DOWNLOADS, async (songWrapper, index) => {
+        const songString = stringifySong(songWrapper);
         const spinner = createSpinner(`Downloading song: ${songString}`, index);
-        const downloadResult = await downloadSong(song);
+        const downloadResult = await downloadSong(songWrapper);
 
         if (!downloadResult.success) {
             spinner.fail(`${downloadResult.error}: ${songString}`);
@@ -283,7 +282,16 @@ export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
 
         // Update source
         const path = downloadResult.value as string;
-        const editResult = await put_librarySongs(id, { ...song, localSource: path });
+
+        const newSongWrapper: SongWrapper = {
+            ...songWrapper,
+            song: {
+                ...songWrapper.song,
+                localSource: path
+            }
+        };
+
+        const editResult = await put_librarySongs(newSongWrapper);
         const editJson = await editResult.json() as Record<string, any>;
 
         if (!editResult.ok) {
@@ -293,6 +301,24 @@ export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
 
         spinner.succeed(`Song downloaded: ${songString}`);
     });
+
+    return 0;
+}
+
+export async function status(): Promise<number> {
+    const result = await get_status();
+    const json = await result.json() as Record<string, any>;
+
+    if (!result.ok) {
+        console.error(`Failed to get status: ${json.error}`);
+        return 1;
+    }
+
+    const status = json as Status;
+
+    if (status.playing) {
+        console.log(stringifySong(status.songWrapper!));
+    }
 
     return 0;
 }
