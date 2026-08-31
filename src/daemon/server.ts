@@ -1,7 +1,7 @@
-import { SongDataSchema, SongSchema, type Library, type Song } from "../core/library"
-import { getStatus, play, stop } from "./daemon"
-import z from "zod"
 import { addSong, editSong, getLibrary, getSong, removeSong } from "./library";
+import { SongDataSchema, SongSchema } from "../core/library"
+import { getStatus, play, stop } from "./player"
+import z from "zod"
 
 export function serve(): void {
     const server = Bun.serve({
@@ -19,21 +19,30 @@ export function serve(): void {
                     const id = body.id;
 
                     // Play song
-                    const result = await getSong(id);
+                    const songResult = await getSong(id);
 
-                    if (!result.success) {
+                    if (!songResult.success) {
                         return Response.json(
-                            { error: result },
+                            { error: songResult.error },
                             { status: 500 }
                         );
                     }
 
-                    return play(result.value);
+                    const playResult = play(songResult.value);
+
+                    if (!playResult.success) {
+                        return Response.json(
+                            { error: playResult.error },
+                            { status: 500 }
+                        );
+                    }
+
+                    return Response.json(playResult.value, { status: 200 });
                 },
 
                 DELETE: async () => {
-                    stop();
-                    return Response.json(getStatus(), { status: 200 });
+                    const status = stop();
+                    return Response.json(status, { status: 200 });
                 }
             },
             "/library": {
