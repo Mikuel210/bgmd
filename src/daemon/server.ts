@@ -11,9 +11,22 @@ export function serve(): void {
             "/": {
                 GET: () => new Response("bgmd: All systems nominal")
             },
-            "/play/:id": {
-                GET: async (request) => {
-                    const id = request.params.id;
+            "/playback": {
+                GET: async () => Response.json(getStatus(), { status: 200 }),
+
+                POST: async (request) => {
+                    let body: Record<string, any>;
+
+                    try {
+                        body = await request.json() as Record<string, any>;
+                    } catch {
+                        return Response.json(
+                            { error: "Malformed body" },
+                            { status: 400 }
+                        );
+                    }
+
+                    const id = body.id;
                     const result = await loadLibrary();
 
                     if (!result.success) {
@@ -28,16 +41,12 @@ export function serve(): void {
 
                     if (song) return play(song);
                     return Response.json({ error: "Song not found" }, { status: 404 });
-                }
-            },
-            "/stop": {
-                GET: async () => {
+                },
+
+                DELETE: async () => {
                     stop();
                     return Response.json(getStatus(), { status: 200 });
                 }
-            },
-            "/status": {
-                GET: async () => Response.json(getStatus(), { status: 200 })
             },
             "/library": {
                 GET: async() => {
@@ -56,10 +65,10 @@ export function serve(): void {
             "/library/songs": {
                 POST: async (request) => {
                     // Validate song
-                    let body;
+                    let body: Record<string, any>;
 
                     try {
-                        body = await request.json();
+                        body = await request.json() as Record<string, any>;
                     } catch {
                         return Response.json(
                             { error: "Malformed body" },
@@ -104,10 +113,10 @@ export function serve(): void {
                 },
 
                 PUT: async (request) => {
-                    let body;
+                    let body: Record<string, any>;
 
                     try {
-                        body = await request.json();
+                        body = await request.json() as Record<string, any>;
                     } catch {
                         return Response.json(
                             { error: "Malformed body" },

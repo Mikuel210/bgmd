@@ -27,16 +27,22 @@ export async function fetchResult<T>(url: string, options: RequestInit = {}): Pr
     }
 }
 
-export async function get_play(id: string): Promise<Result<Status>> {
-    return await fetchResult(DAEMON_URL + `play/${id}`);
+export async function get_playback(): Promise<Result<Status>> {
+    return await fetchResult(DAEMON_URL + "playback");
 }
 
-export async function get_stop(): Promise<Result<Status>> {
-    return await fetchResult(DAEMON_URL + "stop");
+export async function post_playback(id: string): Promise<Result<Status>> {
+    return await fetchResult(DAEMON_URL + "playback", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+        headers: { "Content-Type": "application/json" }
+    });
 }
 
-export async function get_status(): Promise<Result<Status>> {
-    return await fetchResult(DAEMON_URL + "status");
+export async function delete_playback(): Promise<Result<Status>> {
+    return await fetchResult(DAEMON_URL + "playback", {
+        method: "DELETE"
+    });
 }
 
 export async function get_library(): Promise<Result<Library>> {

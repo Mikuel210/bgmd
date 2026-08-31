@@ -1,6 +1,6 @@
 import type { Argument, Flag } from "../framework/command";
 import type { Status } from "../../core/library";
-import { get_play, get_status, get_stop } from "../connection";
+import { post_playback, get_playback, delete_playback } from "../connection";
 import { stringifySong } from "../helpers";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
@@ -11,7 +11,7 @@ export async function root(args: Argument[], flags: Flag[]): Promise<number> {
 
 export async function play(args: Argument[], flags: Flag[]): Promise<number> {
     const id = args[0]!.value as string;
-    const result = await get_play(id);
+    const result = await post_playback(id);
 
     if (!result.success) {
         console.error(`Failed to play song: ${result.error}`);
@@ -23,7 +23,7 @@ export async function play(args: Argument[], flags: Flag[]): Promise<number> {
 }
 
 export async function stop(args: Argument[], flags: Flag[]): Promise<number> {
-    const result = await get_stop();
+    const result = await delete_playback();
 
     if (!result.success) {
         console.error(`Failed to stop playback: ${result.error}`);
@@ -44,7 +44,7 @@ function printStatus(status: Status): void {
 }
 
 export async function status(): Promise<number> {
-    const result = await get_status();
+    const result = await get_playback();
 
     if (!result.success) {
         console.error(`Failed to get status: ${result.error}`);
