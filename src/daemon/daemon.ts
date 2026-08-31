@@ -1,16 +1,10 @@
-import type { SongWrapper } from "./library";
+import type { Song, Status } from "../core/library";
 import { serve } from "./server";
-
-export interface Status {
-    playing: boolean,
-    songWrapper?: SongWrapper
-}
 
 let status: Status = { playing: false };
 let process: Bun.Subprocess | null = null;
 
-export function play(songWrapper: SongWrapper): Response {
-    const song = songWrapper.song;
+export function play(song: Song): Response {
     stop();
 
     if (song.localSource) {
@@ -22,7 +16,7 @@ export function play(songWrapper: SongWrapper): Response {
     if (song.localSource || song.youtubeSource) {
         status = {
             playing: true,
-            songWrapper: songWrapper
+            song: song
         };
 
         return Response.json(status, { status: 200 });
@@ -41,7 +35,7 @@ export function stop(): void {
 }
 
 export function getStatus(): Status {
-    if (process?.exitCode) {
+    if (process?.exitCode !== null) {
         status = {
             playing: false
         };

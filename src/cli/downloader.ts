@@ -1,8 +1,9 @@
-import type { Song, SongWrapper } from "./daemon/library";
-import { HOME_PATH } from "./store";
-import type { TaskResult } from "./task";
+import type { Result } from "../core/task";
+import type { Song } from "../core/library";
+import { HOME_PATH } from "../core/store";
 import path from "node:path";
 
+// Sanitize filenames
 const MUSIC_PATH = path.join(HOME_PATH, "Music");
 const ILLEGAL = /[\/\?<>\\:\*\|":]/g;
 const CONTROL = /[\x00-\x1f\x80-\x9f]/g;
@@ -18,9 +19,8 @@ function sanitize(input: string): string {
         .replace(WINDOWS, REPLACEMENT);
 }
 
-export async function downloadSong(songWrapper: SongWrapper): Promise<TaskResult> {
-    const song = songWrapper.song;
-
+// Download songs
+export async function downloadSong(song: Song): Promise<Result<string>> {
     if (!song.youtubeSource) {
         return {
             success: false,

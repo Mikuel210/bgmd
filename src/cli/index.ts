@@ -1,6 +1,10 @@
-import { captureAlbum, captureArtist, captureSong, library, play, pull, root, songAdd, songEdit, songRemove, songShow, stop } from "./commands";
-import { handle, registerCommand } from "./commands/handler"
-import { validateLocalSource, validatePositiveInteger, validateSongId, validateString, validateYouTubeSource } from "./commands/validate";
+import { validateLocalSource, validatePositiveInteger, validateSongId, validateString, validateYouTubeSource } from "./framework/validate";
+import { songAdd, songEdit, songRemove, songShow } from "./commands/song";
+import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
+import { play, root, status, stop } from "./commands/general";
+import { handle, registerCommand } from "./framework/handler"
+import { library } from "./commands/library";
+import { pull } from "./commands/pull";
 
 let args = Bun.argv.slice(2);
 
@@ -10,6 +14,37 @@ registerCommand({
     args: [],
     flags: [],
     run: root
+});
+
+registerCommand({
+    route: ["status"],
+    description: "See the current status of playback",
+    args: [],
+    flags: [],
+    run: status
+});
+
+registerCommand({
+    route: ["play"],
+    description: "Play a song",
+    args: [
+        {
+            name: "id",
+            description: "The ID of the song to play",
+            params: false,
+            validate: validateSongId
+        }
+    ],
+    flags: [],
+    run: play
+});
+
+registerCommand({
+    route: ["stop"],
+    description: "Stop playback",
+    args: [],
+    flags: [],
+    run: stop
 });
 
 registerCommand({
@@ -180,29 +215,6 @@ registerCommand({
     ],
     flags: [],
     run: songRemove
-});
-
-registerCommand({
-    route: ["play"],
-    description: "Play a song",
-    args: [
-        {
-            name: "id",
-            description: "The ID of the song to play",
-            params: false,
-            validate: validateSongId
-        }
-    ],
-    flags: [],
-    run: play
-});
-
-registerCommand({
-    route: ["stop"],
-    description: "Stop playback",
-    args: [],
-    flags: [],
-    run: stop
 });
 
 registerCommand({

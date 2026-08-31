@@ -1,32 +1,27 @@
+import type { Result } from "../../core/task";
 import { get_library } from "../connection";
-import type { Library, Song, SongWrapper } from "../daemon/library";
-import type { TaskResult } from "../task";
 
 const HTTP_PREFIXES = ["https://www.", "https://", "http://www.", "http://"];
 const YOUTUBE_PREFIXES = ["youtube.com/watch?v=", "youtu.be/"];
 
-export async function validateString(input: string): Promise<TaskResult> {
+export async function validateString(input: string): Promise<Result<string>> {
     return {
         success: true,
         value: input
     };
 }
 
-export async function validateSongId(input: string): Promise<TaskResult> {
-    const response = await get_library();
-    const json = await response.json() as Record<string, any>;
+export async function validateSongId(input: string): Promise<Result<string>> {
+    const result = await get_library();
 
-    if (!response.ok) {
+    if (!result.success) {
         return {
             success: false,
-            error: json.error
+            error: `Failed to fetch library: ${result.error}`
         };
     }
 
-    const library = json as Library;
-    const songWrappers = library.songWrappers;
-
-    if (songWrappers.some(e => e.id == input)) {
+    if (result.value.songs.some(e => e.id == input)) {
         return {
             success: true,
             value: input
@@ -39,7 +34,7 @@ export async function validateSongId(input: string): Promise<TaskResult> {
     }
 }
 
-export async function validateLocalSource(input: string): Promise<TaskResult> {
+export async function validateLocalSource(input: string): Promise<Result<string>> {
     const file = Bun.file(input);
 
     if (await file.exists()) {
@@ -92,7 +87,7 @@ function cleanYouTubeUrl(input: string): string | null {
     return null;
 }
 
-export async function validateYouTubeSource(input: string): Promise<TaskResult> {
+export async function validateYouTubeSource(input: string): Promise<Result<string>> {
     const url = cleanYouTubeUrl(input);
 
     if (url) {
@@ -108,7 +103,7 @@ export async function validateYouTubeSource(input: string): Promise<TaskResult> 
     };
 }
 
-export async function validatePositiveInteger(input: string): Promise<TaskResult> {
+export async function validatePositiveInteger(input: string): Promise<Result<number>> {
     try {
         const number = parseInt(input);
 

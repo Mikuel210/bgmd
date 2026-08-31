@@ -1,10 +1,10 @@
-import type { TaskResult } from "../task"
+import type { Result } from "../../core/task"
 
 export interface Argument {
     name: string,
     description: string,
     params: boolean,
-    validate: (input: string) => Promise<TaskResult>
+    validate: (input: string) => Promise<Result<any>>,
     value?: any,
 }
 
@@ -14,7 +14,7 @@ export interface Flag {
     description: string,
     switch: boolean,
     params: boolean,
-    validate: (input: string) => Promise<TaskResult>,
+    validate: (input: string) => Promise<Result<any>>,
     value?: any
 }
 

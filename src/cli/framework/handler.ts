@@ -1,4 +1,4 @@
-import type { Argument, Command, Flag } from "./command"
+import type { Argument, Command, Flag } from "./command";
 import { showHelp } from "./help";
 
 export const isFlag = (arg: string) => arg.startsWith('-');

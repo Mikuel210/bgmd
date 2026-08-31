@@ -1,49 +1,9 @@
-import z from "zod"
-import { load, save } from "../store"
+import type z from "zod";
+import { LibrarySchema, type Library } from "../core/library";
+import { load, save } from "../core/store"
 
 const LIBRARY_FILENAME = "library.json"
 
-// Schemas
-const SongState = z.enum({
-    Captured: 0,
-    Reviewed: 1
-});
-
-export const SongSchema = z.object({
-    name: z.string(),
-    album: z.string(),
-    artist: z.string(),
-    discNumber: z.number().gt(0).default(1),
-    trackNumber: z.number().gt(0).default(1),
-    youtubeSource: z.string().optional(),
-    localSource: z.string().optional(),
-    state: SongState,
-    mood: z.record(z.string(), z.number()),
-    tags: z.array(z.string())
-});
-
-export const SongWrapperSchema = z.object({
-    id: z.string(),
-    song: SongSchema
-});
-
-export const DimensionSchema = z.object({
-    name: z.string(),
-    min: z.number(),
-    max: z.number()
-});
-
-export const LibrarySchema = z.object({
-    dimensions: z.array(DimensionSchema).default([]),
-    songWrappers: z.array(SongWrapperSchema).default([])
-});
-
-// Types
-export type Song = z.infer<typeof SongSchema>;
-export type SongWrapper = z.infer<typeof SongWrapperSchema>;
-export type Library = z.infer<typeof LibrarySchema>;
-
-// Load and save library
 export function loadLibrary(): Promise<z.ZodSafeParseResult<Library>> {
     return load<Library>(LIBRARY_FILENAME, LibrarySchema);
 }

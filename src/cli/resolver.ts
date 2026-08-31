@@ -1,5 +1,6 @@
-import { createSpinner, forEachConcurrent, reserveLines, type TaskResult } from "./task";
-import { safeFetch } from "./connection";
+import { forEachConcurrent, type Result } from "../core/task";
+import { createSpinner, reserveLines } from "./progress";
+import { fetchResult } from "./connection";
 
 const CONCURRENT_TASKS = 10;
 const SEARCH_LIMIT = 5;
@@ -23,18 +24,18 @@ export interface Track {
     album: Album
 }
 
-async function search(query: string, limit: number, entity: string, wrapperType: string): Promise<TaskResult> {
-    const result = await safeFetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=${entity}&limit=${limit}`);
-    const json = await result.json() as Record<string, any>;
+async function search(query: string, limit: number, entity: string, wrapperType: string): Promise<Result<Record<string, any>[]>> {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=${entity}&limit=${limit}`;
+    const result = await fetchResult<Record<string, any>>(url);
 
-    if (!result.ok) {
+    if (!result.success) {
         return {
             success: false,
-            error: json.error
+            error: result.error
         };
     }
 
-    let response: Record<string, any>[] = json.results;
+    let response: Record<string, any>[] = result.value.results;
 
     response = response
         .filter(e => e.wrapperType == wrapperType)
@@ -46,36 +47,55 @@ async function search(query: string, limit: number, entity: string, wrapperType:
     };
 }
 
-export async function searchArtists(query: string, limit: number = SEARCH_LIMIT): Promise<TaskResult> {
+export async function searchArtists(query: string, limit: number = SEARCH_LIMIT): Promise<Result<Artist[]>> {
     const result = await search(query, limit, "musicArtist", "artist");
     if (!result.success) return result;
 
-    const response: Record<string, any>[] = result.value;
-
-    const artists: Artist[] = response
-        .map(e => {
-            return {
-                id: e.artistId,
-                name: e.artistName
-            }
-        }
-    );
+    const artists: Artist[] = result.value.map(e => {
+        return {
+            id: e.artistId,
+            name: e.artistName
+        };
+    });
 
     return {
         success: true,
         value: artists
-    }
+    };
 }
 
-export async function searchAlbums(query: string, limit: number = SEARCH_LIMIT): Promise<TaskResult> {
+export async function searchAlbums(query: string, limit: number = SEARCH_LIMIT): Promise<Result<Album[]>> {
     const result = await search(query, limit, "album", "collection");
     if (!result.success) return result;
 
-    const response: Record<string, any>[] = result.value;
+    const albums: Album[] = result.value.map(e => {
+        return {
+            id: e.collectionId,
+            name: e.collectionName,
+            artist: {
+                id: e.artistId,
+                name: e.artistName
+            }
+        };
+    });
 
-    const albums: Album[] = response
-        .map(e => {
-            return {
+    return {
+        success: true,
+        value: albums
+    };
+}
+
+export async function searchTracks(query: string, limit: number = SEARCH_LIMIT): Promise<Result<Track[]>> {
+    const result = await search(query, limit, "musicTrack", "track");
+    if (!result.success) return result;
+
+    const tracks: Track[] = result.value.map(e => {
+        return {
+            id: e.trackId,
+            name: e.trackName,
+            discNumber: e.discNumber,
+            trackNumber: e.trackNumber,
+            album: {
                 id: e.collectionId,
                 name: e.collectionName,
                 artist: {
@@ -83,47 +103,16 @@ export async function searchAlbums(query: string, limit: number = SEARCH_LIMIT):
                     name: e.artistName
                 }
             }
-        }
-    );
-
-    return {
-        success: true,
-        value: albums
-    }
-}
-
-export async function searchTracks(query: string, limit: number = SEARCH_LIMIT): Promise<TaskResult> {
-    const result = await search(query, limit, "musicTrack", "track");
-    if (!result.success) return result;
-
-    const response: Record<string, any>[] = result.value;
-
-    const tracks: Track[] = response
-        .map(e => {
-            return {
-                id: e.trackId,
-                name: e.trackName,
-                discNumber: e.discNumber,
-                trackNumber: e.trackNumber,
-                album: {
-                    id: e.collectionId,
-                    name: e.collectionName,
-                    artist: {
-                        id: e.artistId,
-                        name: e.artistName
-                    }
-                }
-            }
-        }
-    );
+        };
+    });
 
     return {
         success: true,
         value: tracks
-    }
+    };
 }
 
-export async function sourceFromTrack(track: Track): Promise<TaskResult> {
+export async function sourceFromTrack(track: Track): Promise<Result<string>> {
     const url = `https://music.youtube.com/search?q=${encodeURIComponent(track.album.artist.name)}+-+${encodeURIComponent(track.name)}]`;
     const process = Bun.spawn(["yt-dlp", "-I", "1", url, "--get-id"], { stderr: "ignore" });
 
@@ -144,18 +133,11 @@ export async function sourceFromTrack(track: Track): Promise<TaskResult> {
     };
 }
 
-export async function tracksFromAlbum(album: Album): Promise<TaskResult> {
-    const result = await fetch(`https://itunes.apple.com/lookup?id=${album.id}&entity=song`);
-    const json = await result.json() as Record<string, any>;
+export async function tracksFromAlbum(album: Album): Promise<Result<Track[]>> {
+    const result = await fetchResult<Record<string, any>>(`https://itunes.apple.com/lookup?id=${album.id}&entity=song`);
+    if (!result.success) return result;
 
-    if (!result.ok) {
-        return {
-            success: false,
-            error: json.error
-        };
-    }
-
-    const response: Record<string, any>[] = json.results;
+    const response: Record<string, any>[] = result.value.results;
 
     const tracks: Track[] = response
         .filter(e =>
@@ -186,18 +168,11 @@ export async function tracksFromAlbum(album: Album): Promise<TaskResult> {
     };
 }
 
-async function albumsFromArtist(artist: Artist): Promise<TaskResult> {
-    const result = await fetch(`https://itunes.apple.com/lookup?id=${artist.id}&entity=album`);
-    const json = await result.json() as Record<string, any>;
+async function albumsFromArtist(artist: Artist): Promise<Result<Album[]>> {
+    const result = await fetchResult<Record<string, any>>(`https://itunes.apple.com/lookup?id=${artist.id}&entity=album`);
+    if (!result.success) return result;
 
-    if (!result.ok) {
-        return {
-            success: false,
-            error: json.error
-        };
-    }
-
-    const response: Record<string, any>[] = json.results;
+    const response: Record<string, any>[] = result.value.results;
 
     const albums: Album[] = response
         .filter(e =>
@@ -222,7 +197,7 @@ async function albumsFromArtist(artist: Artist): Promise<TaskResult> {
     };
 }
 
-export async function tracksFromArtist(artist: Artist): Promise<TaskResult> {
+export async function tracksFromArtist(artist: Artist): Promise<Result<Track[]>> {
     // Fetch albums
     reserveLines(1);
     const spinner = createSpinner("Fetching albums...", 0);
@@ -237,7 +212,7 @@ export async function tracksFromArtist(artist: Artist): Promise<TaskResult> {
     // Fetch tracks
     reserveLines(Math.min(CONCURRENT_TASKS, albums.length));
 
-    await forEachConcurrent(albums, CONCURRENT_TASKS, async (album, index) => {
+    await forEachConcurrent(albums, async (album, index) => {
         const spinner = createSpinner(`Fetching tracks from album: ${album.name}`, index);
         const tracksResult = await tracksFromAlbum(album);
 

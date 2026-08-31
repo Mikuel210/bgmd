@@ -1,28 +1,6 @@
-import { styleText } from "node:util";
 import spinners from "unicode-animations";
+import { styleText } from "node:util";
 
-export interface TaskResult {
-    success: boolean,
-    value?: any,
-    error?: string
-}
-
-export async function forEachConcurrent<T>(items: T[], limit: number, task: (item: T, index: number) => Promise<void>): Promise<void> {
-    let index = 0;
-
-    async function worker() {
-        while (index < items.length) {
-            const current = items[index++]!;
-            await task(current, index - 1);
-        }
-    }
-
-    const workers = Array.from({ length: Math.min(limit, items.length) }, worker);
-    await Promise.all(workers);
-}
-
-
-// Task progress
 let reservedLines = 0;
 
 function hideCursor() {
