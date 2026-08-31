@@ -1,7 +1,7 @@
 import type { Argument, Flag } from "../framework/command";
-import type { SongData } from "../../core/library";
-import { delete_librarySongs, get_librarySongs } from "../connection";
-import { addSong, editSong, stringifySong } from "../helpers";
+import { SongState, type SongData } from "../../core/library";
+import { delete_librarySongs, get_librarySongs, post_librarySongs, put_librarySongs } from "../connection";
+import { stringifySong } from "../formatter";
 
 export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> {
     const name = args[0]!.value as string;
@@ -14,7 +14,7 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
         artist: artist,
         discNumber: 1,
         trackNumber: 1,
-        state: 0,
+        state: SongState.Captured,
         mood: {},
         tags: []
     };
@@ -33,7 +33,7 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
             data.localSource = flag.value as string;
     }
 
-    const addResult = await addSong(data, flags.some(e => e.longName == "track-number"));
+    const addResult = await post_librarySongs(data, flags.some(e => e.longName == "track-number"));
 
     if (!addResult.success) {
         console.error(addResult.error);
@@ -109,7 +109,7 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
     }
 
     // Edit song
-    const editResult = await editSong(song);
+    const editResult = await put_librarySongs(song);
 
     if (!editResult.success) {
         console.error(editResult.error);

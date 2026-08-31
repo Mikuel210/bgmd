@@ -1,7 +1,7 @@
 import { SongDataSchema, SongSchema, type Library, type Song } from "../core/library"
-import { loadLibrary, saveLibrary } from "./library"
 import { getStatus, play, stop } from "./daemon"
 import z from "zod"
+import { addSong, editSong, getLibrary, getSong, removeSong } from "./library";
 
 export function serve(): void {
     const server = Bun.serve({
@@ -15,32 +15,20 @@ export function serve(): void {
                 GET: async () => Response.json(getStatus(), { status: 200 }),
 
                 POST: async (request) => {
-                    let body: Record<string, any>;
-
-                    try {
-                        body = await request.json() as Record<string, any>;
-                    } catch {
-                        return Response.json(
-                            { error: "Malformed body" },
-                            { status: 400 }
-                        );
-                    }
-
+                    const body = await request.json() as Record<string, any>;
                     const id = body.id;
-                    const result = await loadLibrary();
+
+                    // Play song
+                    const result = await getSong(id);
 
                     if (!result.success) {
                         return Response.json(
-                            { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                            { error: result },
                             { status: 500 }
                         );
                     }
 
-                    const library = result.data as Library;
-                    const song = library.songs.find(e => e.id == id);
-
-                    if (song) return play(song);
-                    return Response.json({ error: "Song not found" }, { status: 404 });
+                    return play(result.value);
                 },
 
                 DELETE: async () => {
@@ -50,33 +38,23 @@ export function serve(): void {
             },
             "/library": {
                 GET: async() => {
-                    const result = await loadLibrary();
+                    const result = await getLibrary();
 
                     if (!result.success) {
                         return Response.json(
-                            { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                            { error: result.error },
                             { status: 500 }
                         );
                     }
 
-                    return Response.json(result.data, { status: 200 });
+                    return Response.json(result.value, { status: 200 });
                 }
             },
             "/library/songs": {
                 POST: async (request) => {
                     // Validate song
-                    let body: Record<string, any>;
-
-                    try {
-                        body = await request.json() as Record<string, any>;
-                    } catch {
-                        return Response.json(
-                            { error: "Malformed body" },
-                            { status: 400 }
-                        );
-                    }
-
-                    const dataResult = SongDataSchema.safeParse(body);
+                    const body = await request.json() as Record<string, any>;
+                    const dataResult = SongDataSchema.safeParse(body.data);
 
                     if (!dataResult.success) {
                         return Response.json(
@@ -87,43 +65,21 @@ export function serve(): void {
 
                     const data = dataResult.data;
 
-                    // Validate library
-                    const libraryResult = await loadLibrary();
-
-                    if (!libraryResult.success) {
-                        return Response.json(
-                            { error: "Corrupted library", issues: z.prettifyError(libraryResult.error) },
-                            { status: 500 }
-                        )
-                    }
-
-                    const library = libraryResult.data;
-
                     // Add song
-                    let id = crypto.randomUUID().split('-')[0]!;
+                    const addResult = await addSong(data, body.explicitTrackNumber);
 
-                    while (library.songs.find(e => e.id == id))
-                        id = crypto.randomUUID().split('-')[0]!;
-
-                    const song: Song = { id, ...data };
-                    library.songs.push(song);
-                    saveLibrary(library);
-
-                    return Response.json(song, { status: 201 });
-                },
-
-                PUT: async (request) => {
-                    let body: Record<string, any>;
-
-                    try {
-                        body = await request.json() as Record<string, any>;
-                    } catch {
+                    if (!addResult.success) {
                         return Response.json(
-                            { error: "Malformed body" },
-                            { status: 400 }
+                            { error: addResult.error },
+                            { status: 500 }
                         );
                     }
 
+                    return Response.json(addResult.value, { status: 201 });
+                },
+
+                PUT: async (request) => {
+                    const body = await request.json() as Record<string, any>;
                     const songResult = SongSchema.safeParse(body);
 
                     if (!songResult.success) {
@@ -135,77 +91,46 @@ export function serve(): void {
 
                     const song = songResult.data;
 
-                    // Validate library
-                    const libraryResult = await loadLibrary();
-
-                    if (!libraryResult.success) {
-                        return Response.json(
-                            { error: "Corrupted library", issues: z.prettifyError(libraryResult.error) },
-                            { status: 500 }
-                        )
-                    }
-
-                    const library = libraryResult.data;
-
                     // Update song
-                    const songIndex = library.songs.findIndex(e => e.id == song.id);
+                    const editResult = await editSong(song);
 
-                    if (songIndex != -1) {
-                        library.songs = [
-                            ...library.songs.slice(0, songIndex),
-                            song,
-                            ...library.songs.slice(songIndex + 1)
-                        ];
-
-                        await saveLibrary(library);
-                        return Response.json(song, { status: 200 });
+                    if (!editResult.success) {
+                        return Response.json(
+                            { error: editResult.error },
+                            { status: 500 }
+                        );
                     }
 
-                    return Response.json({ error: "Song not found" }, { status: 404 });
-                },
+                    return Response.json(editResult.value, { status: 200 });
+                }
             },
             "/library/songs/:id": {
                 GET: async (request) => {
                     const id = request.params.id;
-                    const result = await loadLibrary();
+                    const result = await getSong(id);
 
                     if (!result.success) {
                         return Response.json(
-                            { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                            { error: result.error },
                             { status: 500 }
                         );
                     }
 
-                    const library = result.data;
-                    const song = library.songs.find(e => e.id == id);
-
-                    if (song) return Response.json(song, { status: 200 });
-                    return Response.json({ error: "Song not found" }, { status: 404 });
+                    return Response.json(result.value, { status: 200 });
                 },
 
                 DELETE: async (request) => {
                     const id = request.params.id;
-                    const result = await loadLibrary();
+                    const result = await removeSong(id);
 
                     if (!result.success) {
                         return Response.json(
-                            { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                            { error: result.error },
                             { status: 500 }
                         );
                     }
 
-                    const library = result.data;
-                    const songIndex = library.songs.findIndex(e => e.id == id);
-
-                    if (songIndex != -1) {
-                        const song = library.songs[songIndex]!;
-                        library.songs.splice(songIndex, 1);
-
-                        await saveLibrary(library);
-                        return Response.json(song, { status: 200 });
-                    }
-
-                    return Response.json({ error: "Song not found" }, { status: 404 });
+                    return Response.json(result.value, { status: 404 });
                 }
             }
         }

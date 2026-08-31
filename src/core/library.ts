@@ -1,10 +1,12 @@
 import z from "zod"
 
 // Schemas
-const SongState = z.enum({
-    Captured: 0,
-    Reviewed: 1
-});
+export enum SongState {
+    Captured = 0,
+    Reviewed = 0
+}
+
+export const SongStateSchema = z.enum(SongState);
 
 export const SongSchema = z.object({
     id: z.string(),
@@ -15,7 +17,7 @@ export const SongSchema = z.object({
     trackNumber: z.number().gt(0).default(1),
     youtubeSource: z.string().optional(),
     localSource: z.string().optional(),
-    state: SongState,
+    state: SongStateSchema,
     mood: z.record(z.string(), z.number()),
     tags: z.array(z.string())
 });

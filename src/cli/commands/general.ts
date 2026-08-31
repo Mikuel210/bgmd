@@ -1,7 +1,7 @@
 import type { Argument, Flag } from "../framework/command";
 import type { Status } from "../../core/library";
 import { post_playback, get_playback, delete_playback } from "../connection";
-import { stringifySong } from "../helpers";
+import { stringifySong } from "../formatter";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");

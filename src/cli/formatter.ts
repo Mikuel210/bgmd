@@ -1,6 +1,12 @@
+import type { Song } from "../core/library";
 import spinners from "unicode-animations";
 import { styleText } from "node:util";
 
+export function stringifySong(song: Song): string {
+    return `[${song.id}] ${song.artist} - ${song.name} (${song.album})`;
+}
+
+// Task spinners
 let reservedLines = 0;
 
 function hideCursor() {

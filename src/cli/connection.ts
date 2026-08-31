@@ -53,10 +53,10 @@ export async function get_librarySongs(id: string): Promise<Result<Song>> {
     return await fetchResult(DAEMON_URL + `library/songs/${id}`);
 }
 
-export async function post_librarySongs(data: SongData): Promise<Result<Song>> {
+export async function post_librarySongs(data: SongData, explicitTrackNumber: boolean): Promise<Result<Song>> {
     return await fetchResult(DAEMON_URL + "library/songs", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify({ data, explicitTrackNumber }),
         headers: { "Content-Type": "application/json" }
     });
 }

@@ -1,9 +1,10 @@
 import type { Song, SongData } from "../../core/library";
 import type { Argument, Flag } from "../framework/command";
-import { searchAlbums, searchArtists, searchTracks, sourceFromTrack, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "../resolver";
+import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "../resolver";
 import { CONCURRENT_TASKS, forEachConcurrent, type Result } from "../../core/task";
-import { createSpinner, reserveLines } from "../progress";
-import { addSong, stringifySong } from "../helpers";
+import { createSpinner, reserveLines, stringifySong } from "../formatter";
+import { post_librarySongs } from "../connection";
+import { sourceFromTrack } from "../downloader";
 
 interface Name {
     name: string
@@ -33,7 +34,7 @@ async function captureTrack(track: Track): Promise<Result<Song>> {
         tags: []
     };
 
-    const addResult = await addSong(data, true);
+    const addResult = await post_librarySongs(data, true);
 
     if (!addResult.success) {
         return {

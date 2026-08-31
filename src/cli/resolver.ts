@@ -1,5 +1,5 @@
 import { forEachConcurrent, type Result } from "../core/task";
-import { createSpinner, reserveLines } from "./progress";
+import { createSpinner, reserveLines } from "./formatter";
 import { fetchResult } from "./connection";
 
 const CONCURRENT_TASKS = 10;
@@ -24,6 +24,7 @@ export interface Track {
     album: Album
 }
 
+// Search
 async function search(query: string, limit: number, entity: string, wrapperType: string): Promise<Result<Record<string, any>[]>> {
     const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=${entity}&limit=${limit}`;
     const result = await fetchResult<Record<string, any>>(url);
@@ -112,27 +113,7 @@ export async function searchTracks(query: string, limit: number = SEARCH_LIMIT):
     };
 }
 
-export async function sourceFromTrack(track: Track): Promise<Result<string>> {
-    const url = `https://music.youtube.com/search?q=${encodeURIComponent(track.album.artist.name)}+-+${encodeURIComponent(track.name)}]`;
-    const process = Bun.spawn(["yt-dlp", "-I", "1", url, "--get-id"], { stderr: "ignore" });
-
-    const exitCode = await process.exited;
-
-    if (exitCode != 0) {
-        return {
-            success: false,
-            error: `Process exited with code ${exitCode}`
-        };
-    }
-
-    const videoId = (await process.stdout.text()).trim();
-
-    return {
-        success: true,
-        value: `https://youtube.com/watch?v=${videoId}`
-    };
-}
-
+// Fetch tracks
 export async function tracksFromAlbum(album: Album): Promise<Result<Track[]>> {
     const result = await fetchResult<Record<string, any>>(`https://itunes.apple.com/lookup?id=${album.id}&entity=song`);
     if (!result.success) return result;
@@ -206,7 +187,7 @@ export async function tracksFromArtist(artist: Artist): Promise<Result<Track[]>>
     if (!albumsResult.success) return albumsResult;
     spinner.succeed("Albums fetched");
 
-    const albums = albumsResult.value as Album[];
+    const albums = albumsResult.value;
     const tracks: Track[] = [];
 
     // Fetch tracks
@@ -221,7 +202,7 @@ export async function tracksFromArtist(artist: Artist): Promise<Result<Track[]>>
             return;
         }
 
-        const albumTracks = tracksResult.value as Track[];
+        const albumTracks = tracksResult.value;
         tracks.push(...albumTracks);
 
         spinner.succeed(`Fetched tracks from album: ${album.name}`);

@@ -1,5 +1,5 @@
 import type { Argument, Flag } from "../framework/command";
-import { stringifySong } from "../helpers";
+import { stringifySong } from "../formatter";
 import { get_library } from "../connection";
 
 export async function library(args: Argument[], flags: Flag[]): Promise<number> {

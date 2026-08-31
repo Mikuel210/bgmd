@@ -1,9 +1,9 @@
 import type { Argument, Flag } from "../framework/command";
 import type { Song } from "../../core/library";
 import { get_library, put_librarySongs } from "../connection";
-import { createSpinner, reserveLines } from "../progress";
+import { createSpinner, reserveLines } from "../formatter";
 import { forEachConcurrent } from "../../core/task";
-import { stringifySong } from "../helpers";
+import { stringifySong } from "../formatter";
 import { downloadSong } from "../downloader";
 
 const CONCURRENT_DOWNLOADS = 5;

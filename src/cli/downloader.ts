@@ -2,6 +2,7 @@ import type { Result } from "../core/task";
 import type { Song } from "../core/library";
 import { HOME_PATH } from "../core/store";
 import path from "node:path";
+import type { Track } from "./resolver";
 
 // Sanitize filenames
 const MUSIC_PATH = path.join(HOME_PATH, "Music");
@@ -17,6 +18,28 @@ function sanitize(input: string): string {
         .replace(CONTROL, REPLACEMENT)
         .replace(RESERVED, REPLACEMENT)
         .replace(WINDOWS, REPLACEMENT);
+}
+
+// Get track source
+export async function sourceFromTrack(track: Track): Promise<Result<string>> {
+    const url = `https://music.youtube.com/search?q=${encodeURIComponent(track.album.artist.name)}+-+${encodeURIComponent(track.name)}]`;
+    const process = Bun.spawn(["yt-dlp", "-I", "1", url, "--get-id"], { stderr: "ignore" });
+
+    const exitCode = await process.exited;
+
+    if (exitCode != 0) {
+        return {
+            success: false,
+            error: `Process exited with code ${exitCode}`
+        };
+    }
+
+    const videoId = (await process.stdout.text()).trim();
+
+    return {
+        success: true,
+        value: `https://youtube.com/watch?v=${videoId}`
+    };
 }
 
 // Download songs
