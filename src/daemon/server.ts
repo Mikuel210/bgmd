@@ -8,45 +8,65 @@ export function serve(): void {
         port: 8686,
         error: (e) => Response.json({ error: String(e) }, { status: 500 }),
         routes: {
-            "/": () => new Response("bgmd: All systems nominal"),
-            "/play/:id": async (request) => {
-                const id = request.params.id;
-                const result = await loadLibrary();
-
-                if (!result.success) {
-                    return Response.json(
-                        { error: "Corrupted library", issues: z.prettifyError(result.error) },
-                        { status: 500 }
-                    );
-                }
-
-                const library = result.data as Library;
-                const song = library.songs.find(e => e.id == id);
-
-                if (song) return play(song);
-                return Response.json({ error: "Song not found" }, { status: 404 });
+            "/": {
+                GET: () => new Response("bgmd: All systems nominal")
             },
-            "/stop": async (request) => {
-                stop();
-                return Response.json({ stopped: true }, { status: 200 });
-            },
-            "/status": async () => Response.json(getStatus(), { status: 200 }),
-            "/library": async () => {
-                const result = await loadLibrary();
+            "/play/:id": {
+                GET: async (request) => {
+                    const id = request.params.id;
+                    const result = await loadLibrary();
 
-                if (!result.success) {
-                    return Response.json(
-                        { error: "Corrupted library", issues: z.prettifyError(result.error) },
-                        { status: 500 }
-                    );
+                    if (!result.success) {
+                        return Response.json(
+                            { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                            { status: 500 }
+                        );
+                    }
+
+                    const library = result.data as Library;
+                    const song = library.songs.find(e => e.id == id);
+
+                    if (song) return play(song);
+                    return Response.json({ error: "Song not found" }, { status: 404 });
                 }
+            },
+            "/stop": {
+                GET: async () => {
+                    stop();
+                    return Response.json(getStatus(), { status: 200 });
+                }
+            },
+            "/status": {
+                GET: async () => Response.json(getStatus(), { status: 200 })
+            },
+            "/library": {
+                GET: async() => {
+                    const result = await loadLibrary();
 
-                return Response.json(result.data, { status: 200 })
+                    if (!result.success) {
+                        return Response.json(
+                            { error: "Corrupted library", issues: z.prettifyError(result.error) },
+                            { status: 500 }
+                        );
+                    }
+
+                    return Response.json(result.data, { status: 200 });
+                }
             },
             "/library/songs": {
                 POST: async (request) => {
                     // Validate song
-                    const body = await request.json();
+                    let body;
+
+                    try {
+                        body = await request.json();
+                    } catch {
+                        return Response.json(
+                            { error: "Malformed body" },
+                            { status: 400 }
+                        );
+                    }
+
                     const dataResult = SongDataSchema.safeParse(body);
 
                     if (!dataResult.success) {
@@ -84,7 +104,17 @@ export function serve(): void {
                 },
 
                 PUT: async (request) => {
-                    const body = await request.json();
+                    let body;
+
+                    try {
+                        body = await request.json();
+                    } catch {
+                        return Response.json(
+                            { error: "Malformed body" },
+                            { status: 400 }
+                        );
+                    }
+
                     const songResult = SongSchema.safeParse(body);
 
                     if (!songResult.success) {
