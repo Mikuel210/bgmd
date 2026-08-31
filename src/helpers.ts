@@ -1,8 +1,10 @@
-import { styleText } from "node:util";
+import { sleep } from "bun";
 import { get_library, post_librarySongs, put_librarySongs } from "./connection";
 import type { Library, Song } from "./daemon/library";
 import { sourceFromTrack, type Track } from "./resolver";
-import { forEachConcurrent, type TaskResult } from "./task";
+import { createSpinner, forEachConcurrent, reserveLines, type TaskResult } from "./task";
+
+const CONCURRENT_TASKS = 10;
 
 export function stringifySong(id: string, song: Song): string {
     return `[${id}] ${song.artist} - ${song.name} (${song.album})`;
@@ -204,8 +206,6 @@ export async function capture<T extends Name>(
         }
 
         entry = entries[number - 1]!;
-    } else {
-        console.log(`Exact match found: ${stringify(entry)}`);
     }
 
     // Fetch tracks
@@ -219,17 +219,19 @@ export async function capture<T extends Name>(
     const tracks = tracksResult.value as Track[];
 
     // Capture songs
-    await forEachConcurrent(tracks, async (track) => {
-        console.log(`Capturing song: ${track.name}`);
+    reserveLines(Math.min(CONCURRENT_TASKS, tracks.length));
+
+    await forEachConcurrent(tracks, CONCURRENT_TASKS, async (track, index) => {
+        const spinner = createSpinner(`Capturing song: ${track.name}`, index);
         const captureResult = await captureTrack(track);
 
         if (!captureResult.success) {
-            console.error(`${captureResult.error}: ${track.name}`);
+            spinner.fail(`${captureResult.error}: ${track.name}`);
             return;
         }
 
         const captureJson = captureResult.value as Record<string, any>;
-        console.log(styleText("green", `Song captured: ${stringifySong(captureJson.id, captureJson.song)}`));
+        spinner.succeed(`Song captured: ${stringifySong(captureJson.id, captureJson.song)}`);
     });
 
     return 0;

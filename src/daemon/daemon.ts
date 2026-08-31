@@ -5,10 +5,11 @@ let currentSong: Song | null = null;
 let currentProcess: Bun.Subprocess | null = null;
 
 export function play(song: Song): Response {
-    if (song.localSource)
+    if (song.localSource) {
         currentProcess = Bun.spawn(["mpv", song.localSource, "--aid=1"]);
-    else if (song.youtubeSource)
+    } else if (song.youtubeSource) {
         currentProcess = Bun.spawn(["mpv", song.youtubeSource, "--no-video", "--aid=1"]);
+    }
 
     if (song.localSource || song.youtubeSource) {
         currentSong = song;

@@ -1,7 +1,8 @@
-import { forEachConcurrent, type TaskResult } from "./task";
+import { createSpinner, forEachConcurrent, reserveLines, type TaskResult } from "./task";
 import { safeFetch } from "./connection";
 
-const LIMIT = 5;
+const CONCURRENT_TASKS = 10;
+const SEARCH_LIMIT = 5;
 
 export interface Artist {
     id: number,
@@ -45,7 +46,7 @@ async function search(query: string, limit: number, entity: string, wrapperType:
     };
 }
 
-export async function searchArtists(query: string, limit: number = LIMIT): Promise<TaskResult> {
+export async function searchArtists(query: string, limit: number = SEARCH_LIMIT): Promise<TaskResult> {
     const result = await search(query, limit, "musicArtist", "artist");
     if (!result.success) return result;
 
@@ -66,7 +67,7 @@ export async function searchArtists(query: string, limit: number = LIMIT): Promi
     }
 }
 
-export async function searchAlbums(query: string, limit: number = LIMIT): Promise<TaskResult> {
+export async function searchAlbums(query: string, limit: number = SEARCH_LIMIT): Promise<TaskResult> {
     const result = await search(query, limit, "album", "collection");
     if (!result.success) return result;
 
@@ -91,7 +92,7 @@ export async function searchAlbums(query: string, limit: number = LIMIT): Promis
     }
 }
 
-export async function searchTracks(query: string, limit: number = LIMIT): Promise<TaskResult> {
+export async function searchTracks(query: string, limit: number = SEARCH_LIMIT): Promise<TaskResult> {
     const result = await search(query, limit, "musicTrack", "track");
     if (!result.success) return result;
 
@@ -222,26 +223,33 @@ async function albumsFromArtist(artist: Artist): Promise<TaskResult> {
 }
 
 export async function tracksFromArtist(artist: Artist): Promise<TaskResult> {
-    console.log("Fetching albums...");
-
+    // Fetch albums
+    reserveLines(1);
+    const spinner = createSpinner("Fetching albums...", 0);
     const albumsResult = await albumsFromArtist(artist);
+
     if (!albumsResult.success) return albumsResult;
+    spinner.succeed("Albums fetched");
 
     const albums = albumsResult.value as Album[];
     const tracks: Track[] = [];
 
-    await forEachConcurrent(albums, async (album) => {
+    // Fetch tracks
+    reserveLines(Math.min(CONCURRENT_TASKS, albums.length));
+
+    await forEachConcurrent(albums, CONCURRENT_TASKS, async (album, index) => {
+        const spinner = createSpinner(`Fetching tracks from album: ${album.name}`, index);
         const tracksResult = await tracksFromAlbum(album);
 
         if (!tracksResult.success) {
-            console.error(`Failed to fetch tracks from album: ${tracksResult.error}`);
+            spinner.fail(`Failed to fetch tracks from album: ${tracksResult.error}`);
             return;
         }
 
         const albumTracks = tracksResult.value as Track[];
         tracks.push(...albumTracks);
 
-        console.log(`Fetched tracks from album: ${album.name}`);
+        spinner.succeed(`Fetched tracks from album: ${album.name}`);
     });
 
     return {

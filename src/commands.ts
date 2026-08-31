@@ -1,11 +1,12 @@
-import { styleText } from "node:util";
 import type { Argument, Flag } from "./commands/command";
 import type { Library, Song } from "./daemon/library";
 import { delete_librarySongs, get_library, get_librarySongs, get_play, get_stop, put_librarySongs } from "./connection";
 import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "./resolver";
 import { addSong, capture, editSong, getSongId, stringifySong } from "./helpers";
-import { forEachConcurrent } from "./task";
+import { createSpinner, forEachConcurrent, reserveLines } from "./task";
 import { downloadSong } from "./downloader";
+
+const CONCURRENT_DOWNLOADS = 5;
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("Usage: bgmctl <command> [<args>]");
@@ -265,15 +266,18 @@ export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
     const library = libraryJson as Library;
     const toPull = Object.values(library.songs).filter(e => e.youtubeSource && !e.localSource);
 
-    await forEachConcurrent(toPull, async (song) => {
+    // Download songs
+    reserveLines(Math.min(CONCURRENT_DOWNLOADS, toPull.length));
+
+    await forEachConcurrent(toPull, CONCURRENT_DOWNLOADS, async (song, index) => {
         const id = getSongId(library, song);
         const songString = stringifySong(id, song);
 
-        console.log(`Downloading song: ${songString}`);
+        const spinner = createSpinner(`Downloading song: ${songString}`, index);
         const downloadResult = await downloadSong(song);
 
         if (!downloadResult.success) {
-            console.error(`${downloadResult.error}: ${songString}`);
+            spinner.fail(`${downloadResult.error}: ${songString}`);
             return;
         }
 
@@ -283,11 +287,11 @@ export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
         const editJson = await editResult.json() as Record<string, any>;
 
         if (!editResult.ok) {
-            console.error(`Failed to edit song: ${editJson.localSource}`);
+            spinner.fail(`Failed to edit song: ${editJson.localSource}`);
             return;
         }
 
-        console.log(styleText("green", `Song downloaded: ${songString}`));
+        spinner.succeed(`Song downloaded: ${songString}`);
     });
 
     return 0;
