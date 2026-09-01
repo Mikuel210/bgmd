@@ -5,6 +5,7 @@ import { play, root, status, stop } from "./commands/general";
 import { handle, registerCommand } from "./framework/handler"
 import { library } from "./commands/library";
 import { pull } from "./commands/pull";
+import { albumList } from "./commands/album";
 
 let args = Bun.argv.slice(2);
 
@@ -29,8 +30,8 @@ registerCommand({
     description: "Play a song",
     args: [
         {
-            name: "id",
-            description: "The ID of the song to play",
+            name: "song",
+            description: "The name or ID of the song to play",
             params: false,
             validate: validateSong
         }
@@ -120,8 +121,8 @@ registerCommand({
     description: "Show the properties of a song",
     args: [
         {
-            name: "id",
-            description: "The ID of the song to show",
+            name: "song",
+            description: "The name or ID of the song to show",
             params: false,
             validate: validateSong
         }
@@ -135,8 +136,8 @@ registerCommand({
     description: "Edit the properties of a song",
     args: [
         {
-            name: "id",
-            description: "The ID of the song to show",
+            name: "song",
+            description: "The name or ID of the song to show",
             params: false,
             validate: validateSong
         }
@@ -207,14 +208,22 @@ registerCommand({
     description: "Remove a song from the library",
     args: [
         {
-            name: "id",
-            description: "The ID of the song to remove",
+            name: "song",
+            description: "The name or ID of the song to remove",
             params: false,
             validate: validateSong
         }
     ],
     flags: [],
     run: songRemove
+});
+
+registerCommand({
+    route: ["album", "list"],
+    description: "List all albums in the library",
+    args: [],
+    flags: [],
+    run: albumList
 });
 
 registerCommand({

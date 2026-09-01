@@ -1,4 +1,4 @@
-import { LibrarySchema, type Library, type Song, type SongData } from "../core/library";
+import { LibrarySchema, type Album, type Library, type Song, type SongData } from "../core/library";
 import type { Result } from "../core/task";
 import { load, save } from "../core/store";
 
@@ -49,6 +49,7 @@ export function getLibrary(): Promise<Result<Library>> {
     });
 }
 
+// Song management
 export function getSong(id: string): Promise<Result<Song>> {
     return withLibrary(async (library) => {
         const song = library.songs.find(e => e.id == id);
@@ -173,6 +174,34 @@ export function removeSong(id: string): Promise<Result<Song>> {
         return {
             success: false,
             error: "Song not found"
+        };
+    });
+}
+
+// Album management
+export function getAlbums(): Promise<Result<Album[]>> {
+    return withLibrary(async (library) => {
+        const albums: Album[] = [];
+
+        for (const song of library.songs) {
+            const album = albums.find(e => e.name == song.album && e.artist == song.artist);
+
+            if (!album) {
+                albums.push({
+                    name: song.album,
+                    artist: song.artist,
+                    songs: [song]
+                });
+
+                continue;
+            }
+
+            album.songs.push(song);
+        }
+
+        return {
+            success: true,
+            value: albums
         };
     });
 }

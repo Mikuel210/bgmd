@@ -1,4 +1,4 @@
-import { addSong, editSong, getLibrary, getSong, removeSong } from "./library";
+import { addSong, editSong, getAlbums, getLibrary, getSong, removeSong } from "./library";
 import { SongDataSchema, SongSchema } from "../core/library"
 import { getStatus, play, stop } from "./player"
 import { PORT } from "../core/config";
@@ -138,6 +138,20 @@ export function serve(): void {
                             { error: result.error },
                             { status: 500 }
                         );
+                    }
+
+                    return Response.json(result.value, { status: 200 });
+                }
+            },
+            "/library/albums": {
+                GET: async () => {
+                    const result = await getAlbums();
+
+                    if (!result.success) {
+                        return Response.json(
+                            { error: result.error },
+                            { status: 500 }
+                        )
                     }
 
                     return Response.json(result.value, { status: 200 });

@@ -1,4 +1,4 @@
-import type { Song } from "../core/library";
+import type { Album, Song } from "../core/library";
 import spinners from "unicode-animations";
 import { styleText } from "node:util";
 import type { Result } from "../core/task";
@@ -6,6 +6,11 @@ import Fuse from "fuse.js";
 
 export function stringifySong(song: Song): string {
     return `[${song.id}] ${song.artist} - ${song.name} (${song.album})`;
+}
+
+export function stringifyAlbum(album: Album): string {
+    const tracks = `${album.songs.length} track${album.songs.length == 1 ? '' : 's'}`;
+    return `${album.artist} - ${album.name} (${tracks})`;
 }
 
 // Prompt options
