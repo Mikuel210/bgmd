@@ -1,5 +1,5 @@
 import type { Argument, Flag } from "../framework/command";
-import { SongState, type SongData } from "../../core/library";
+import { SongState, type Song, type SongData } from "../../core/library";
 import { delete_librarySongs, get_librarySongs, post_librarySongs, put_librarySongs } from "../connection";
 import { stringifySong } from "../formatter";
 
@@ -40,30 +40,14 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
 }
 
 export async function songShow(args: Argument[], flags: Flag[]): Promise<number> {
-    const id = args[0]!.value as string;
-    const result = await get_librarySongs(id);
+    const song = args[0]!.value as Song;
+    console.log(song);
 
-    if (!result.success) {
-        console.error(`Failed to show song: ${result.error}`);
-        return 1;
-    }
-
-    console.log(result.value);
     return 0;
 }
 
 export async function songEdit(args: Argument[], flags: Flag[]): Promise<number> {
-    // Load song
-    const id = args[0]!.value as string;
-    const songResult = await get_librarySongs(id);
-
-    if (!songResult.success) {
-        console.error(`Failed to fetch song: ${songResult.error}`);
-        return 1;
-    }
-
-    // Edit song
-    let song = songResult.value;
+    let song = args[0]!.value;
     let changesMade = false;
 
     for (const flag of flags) {
@@ -97,8 +81,8 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
 }
 
 export async function songRemove(args: Argument[], flags: Flag[]): Promise<number> {
-    const id = args[0]!.value as string;
-    const deleteResult = await delete_librarySongs(id);
+    const song = args[0]!.value as Song;
+    const deleteResult = await delete_librarySongs(song.id);
 
     if (!deleteResult.success) {
         console.error(`Failed to remove song: ${deleteResult.error}`);

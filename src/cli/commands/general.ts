@@ -1,5 +1,5 @@
 import type { Argument, Flag } from "../framework/command";
-import type { Status } from "../../core/library";
+import type { Song, Status } from "../../core/library";
 import { post_playback, get_playback, delete_playback } from "../connection";
 import { stringifySong } from "../formatter";
 
@@ -10,8 +10,8 @@ export async function root(args: Argument[], flags: Flag[]): Promise<number> {
 }
 
 export async function play(args: Argument[], flags: Flag[]): Promise<number> {
-    const id = args[0]!.value as string;
-    const result = await post_playback(id);
+    const song = args[0]!.value as Song;
+    const result = await post_playback(song.id);
 
     if (!result.success) {
         console.error(`Failed to play song: ${result.error}`);

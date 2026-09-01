@@ -1,10 +1,83 @@
 import type { Song } from "../core/library";
 import spinners from "unicode-animations";
 import { styleText } from "node:util";
+import type { Result } from "../core/task";
+import Fuse from "fuse.js";
 
 export function stringifySong(song: Song): string {
     return `[${song.id}] ${song.artist} - ${song.name} (${song.album})`;
 }
+
+// Prompt options
+export function fuzzySearch<T>(entries: T[], keys: string[], query: string, limit: number): T[] {
+    const fuse = new Fuse(entries, { keys });
+    const matches = fuse.search(query).map(e => e.item);
+
+    matches.splice(limit);
+    return matches;
+}
+
+export async function promptOptions<T extends { name: string }>(
+    entries: T[],
+    query: string,
+    stringify: (entry: T) => string,
+    promptName: string)
+    : Promise<Result<T>>
+{
+    let matches = entries.filter(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
+
+    if (entries.length == 0) {
+        return {
+            success: false,
+            error: "No matches found"
+        };
+    } else if (matches.length == 1) {
+        return {
+            success: true,
+            value: matches[0]!
+        };
+    } else {
+        // Prompt options
+        for (let i = 0; i < entries.length; i++) {
+            const entry = entries[i]!;
+            console.log(`${i + 1}. ${stringify(entry)}`);
+        }
+
+        const range = `(1 - ${entries.length})`;
+        const input = prompt(`\nSelect ${promptName} to add ${range}:`) ?? "";
+        let number;
+
+        try {
+            number = parseInt(input);
+        } catch (e) {
+            return {
+                success: false,
+                error: `Value must be a number ${range}`
+            };
+        }
+
+        // Validate range
+        if (number < 1) {
+            return {
+                success: false,
+                error: "Value must be greater than 0"
+            };
+        }
+
+        if (number > entries.length) {
+            return {
+                success: false,
+                error: `Value must be lower than ${entries.length + 1}`
+            };
+        }
+
+        return {
+            success: true,
+            value: entries[number - 1]!
+        };
+    }
+}
+
 
 // Task spinners
 let reservedLines = 0;

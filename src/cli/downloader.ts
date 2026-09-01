@@ -1,6 +1,6 @@
 import type { Result } from "../core/task";
 import type { Song } from "../core/library";
-import type { Track } from "./resolver";
+import type { TrackMetadata } from "./resolver";
 import { MUSIC_PATH } from "../core/config";
 import path from "node:path";
 
@@ -20,7 +20,7 @@ function sanitize(input: string): string {
 }
 
 // Get track source
-export async function sourceFromTrack(track: Track): Promise<Result<string>> {
+export async function sourceFromTrack(track: TrackMetadata): Promise<Result<string>> {
     const url = `https://music.youtube.com/search?q=${encodeURIComponent(track.album.artist.name)}+-+${encodeURIComponent(track.name)}]`;
     const process = Bun.spawn(["yt-dlp", "-I", "1", url, "--get-id"], { stderr: "ignore" });
 

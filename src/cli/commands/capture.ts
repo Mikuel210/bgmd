@@ -1,17 +1,13 @@
-import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "../resolver";
+import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type AlbumMetadata, type ArtistMetadata, type TrackMetadata } from "../resolver";
 import { SongState, type Song, type SongData } from "../../core/library";
 import { forEachConcurrent, type Result } from "../../core/task";
 import type { Argument, Flag } from "../framework/command";
-import { createSpinner, reserveLines, stringifySong } from "../formatter";
+import { createSpinner, promptOptions, reserveLines, stringifySong } from "../formatter";
 import { post_librarySongs } from "../connection";
 import { CONCURRENT_TASKS } from "../../core/config";
 import { sourceFromTrack } from "../downloader";
 
-interface Name {
-    name: string
-}
-
-async function captureTrack(track: Track): Promise<Result<Song>> {
+async function captureTrack(track: TrackMetadata): Promise<Result<Song>> {
     const sourceResult = await sourceFromTrack(track);
 
     if (!sourceResult.success) {
@@ -50,12 +46,12 @@ async function captureTrack(track: Track): Promise<Result<Song>> {
     };
 }
 
-async function capture<T extends Name>(
+async function capture<T extends { name: string }>(
     query: string,
     search: (query: string) => Promise<Result<T[]>>,
     promptName: string,
     stringify: (entry: T) => string,
-    getTracks: (entry: T) => Promise<Result<Track[]>>)
+    getTracks: (entry: T) => Promise<Result<TrackMetadata[]>>)
     : Promise<number>
 {
     const searchResult = await search(query);
@@ -65,50 +61,16 @@ async function capture<T extends Name>(
         return 1;
     }
 
-    // Check for exact match
-    const entries = searchResult.value;
-    let matches = entries.filter(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
-    let match: T;
+    // Get chosen option
+    const matchResult = await promptOptions(searchResult.value, query, stringify, promptName);
 
-    if (entries.length == 0) {
-        console.error("No matches found");
+    if (!matchResult.success) {
+        console.error(matchResult.error);
         return 1;
-    } else if (matches.length == 1) {
-        match = matches[0]!;
-    } else {
-        // Prompt options
-        for (let i = 0; i < entries.length; i++) {
-            const entry = entries[i]!;
-            console.log(`${i + 1}. ${stringify(entry)}`);
-        }
-
-        const range = `(1 - ${entries.length})`;
-        const input = prompt(`\nSelect ${promptName} to add ${range}:`) ?? "";
-        let number;
-
-        try {
-            number = parseInt(input);
-        } catch (e) {
-            console.error(`Value must be a number ${range}`);
-            return 1;
-        }
-
-        // Validate range
-        if (number < 1) {
-            console.error("Value must be greater than 0");
-            return 1;
-        }
-
-        if (number > entries.length) {
-            console.error(`Value must be lower than ${entries.length + 1}`);
-            return 1;
-        }
-
-        match = entries[number - 1]!;
     }
 
     // Fetch tracks
-    const tracksResult = await getTracks(match);
+    const tracksResult = await getTracks(matchResult.value);
 
     if (!tracksResult.success) {
         console.error(tracksResult.error);
@@ -138,7 +100,7 @@ async function capture<T extends Name>(
 export async function captureSong(args: Argument[], flags: Flag[]): Promise<number> {
     const query = args[0]!.value as string;
 
-    return await capture<Track>(
+    return await capture<TrackMetadata>(
         query,
         searchTracks,
         "a song",
@@ -155,7 +117,7 @@ export async function captureSong(args: Argument[], flags: Flag[]): Promise<numb
 export async function captureAlbum(args: Argument[], flags: Flag[]): Promise<number> {
     const query = args[0]!.value as string;
 
-    return await capture<Album>(
+    return await capture<AlbumMetadata>(
         query,
         searchAlbums,
         "an album",
@@ -167,7 +129,7 @@ export async function captureAlbum(args: Argument[], flags: Flag[]): Promise<num
 export async function captureArtist(args: Argument[], flags: Flag[]): Promise<number> {
     const query = args[0]!.value as string;
 
-    return await capture<Artist>(
+    return await capture<ArtistMetadata>(
         query,
         searchArtists,
         "an artist",

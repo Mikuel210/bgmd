@@ -5,23 +5,23 @@ import { fetchResult } from "./connection";
 
 const SEARCH_LIMIT = 5;
 
-export interface Artist {
+export interface ArtistMetadata {
     id: number,
     name: string
 }
 
-export interface Album {
+export interface AlbumMetadata {
     id: number,
     name: string,
-    artist: Artist
+    artist: ArtistMetadata
 }
 
-export interface Track {
+export interface TrackMetadata {
     id: number,
     name: string,
     discNumber: number,
     trackNumber: number,
-    album: Album
+    album: AlbumMetadata
 }
 
 // Search
@@ -48,11 +48,11 @@ async function search(query: string, limit: number, entity: string, wrapperType:
     };
 }
 
-export async function searchArtists(query: string, limit: number = SEARCH_LIMIT): Promise<Result<Artist[]>> {
+export async function searchArtists(query: string, limit: number = SEARCH_LIMIT): Promise<Result<ArtistMetadata[]>> {
     const result = await search(query, limit, "musicArtist", "artist");
     if (!result.success) return result;
 
-    const artists: Artist[] = result.value.map(e => {
+    const artists: ArtistMetadata[] = result.value.map(e => {
         return {
             id: e.artistId,
             name: e.artistName
@@ -65,11 +65,11 @@ export async function searchArtists(query: string, limit: number = SEARCH_LIMIT)
     };
 }
 
-export async function searchAlbums(query: string, limit: number = SEARCH_LIMIT): Promise<Result<Album[]>> {
+export async function searchAlbums(query: string, limit: number = SEARCH_LIMIT): Promise<Result<AlbumMetadata[]>> {
     const result = await search(query, limit, "album", "collection");
     if (!result.success) return result;
 
-    const albums: Album[] = result.value.map(e => {
+    const albums: AlbumMetadata[] = result.value.map(e => {
         return {
             id: e.collectionId,
             name: e.collectionName,
@@ -86,11 +86,11 @@ export async function searchAlbums(query: string, limit: number = SEARCH_LIMIT):
     };
 }
 
-export async function searchTracks(query: string, limit: number = SEARCH_LIMIT): Promise<Result<Track[]>> {
+export async function searchTracks(query: string, limit: number = SEARCH_LIMIT): Promise<Result<TrackMetadata[]>> {
     const result = await search(query, limit, "musicTrack", "track");
     if (!result.success) return result;
 
-    const tracks: Track[] = result.value.map(e => {
+    const tracks: TrackMetadata[] = result.value.map(e => {
         return {
             id: e.trackId,
             name: e.trackName,
@@ -114,13 +114,13 @@ export async function searchTracks(query: string, limit: number = SEARCH_LIMIT):
 }
 
 // Fetch tracks
-export async function tracksFromAlbum(album: Album): Promise<Result<Track[]>> {
+export async function tracksFromAlbum(album: AlbumMetadata): Promise<Result<TrackMetadata[]>> {
     const result = await fetchResult<Record<string, any>>(`https://itunes.apple.com/lookup?id=${album.id}&entity=song`);
     if (!result.success) return result;
 
     const response: Record<string, any>[] = result.value.results;
 
-    const tracks: Track[] = response
+    const tracks: TrackMetadata[] = response
         .filter(e =>
             e.wrapperType == "track" &&
             e.artistName == album.artist.name
@@ -149,13 +149,13 @@ export async function tracksFromAlbum(album: Album): Promise<Result<Track[]>> {
     };
 }
 
-async function albumsFromArtist(artist: Artist): Promise<Result<Album[]>> {
+async function albumsFromArtist(artist: ArtistMetadata): Promise<Result<AlbumMetadata[]>> {
     const result = await fetchResult<Record<string, any>>(`https://itunes.apple.com/lookup?id=${artist.id}&entity=album`);
     if (!result.success) return result;
 
     const response: Record<string, any>[] = result.value.results;
 
-    const albums: Album[] = response
+    const albums: AlbumMetadata[] = response
         .filter(e =>
             e.wrapperType == "collection" &&
             e.artistName == artist.name
@@ -178,7 +178,7 @@ async function albumsFromArtist(artist: Artist): Promise<Result<Album[]>> {
     };
 }
 
-export async function tracksFromArtist(artist: Artist): Promise<Result<Track[]>> {
+export async function tracksFromArtist(artist: ArtistMetadata): Promise<Result<TrackMetadata[]>> {
     // Fetch albums
     reserveLines(1);
     const spinner = createSpinner("Fetching albums...", 0);
@@ -188,7 +188,7 @@ export async function tracksFromArtist(artist: Artist): Promise<Result<Track[]>>
     spinner.succeed("Albums fetched");
 
     const albums = albumsResult.value;
-    const tracks: Track[] = [];
+    const tracks: TrackMetadata[] = [];
 
     // Fetch tracks
     reserveLines(Math.min(CONCURRENT_TASKS, albums.length));

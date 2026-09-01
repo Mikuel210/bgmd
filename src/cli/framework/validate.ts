@@ -1,5 +1,7 @@
+import type { Song } from "../../core/library";
 import type { Result } from "../../core/task";
-import { get_library } from "../connection";
+import { get_library, get_librarySongs } from "../connection";
+import { fuzzySearch, promptOptions, stringifySong } from "../formatter";
 
 const HTTP_PREFIXES = ["https://www.", "https://", "http://www.", "http://"];
 const YOUTUBE_PREFIXES = ["youtube.com/watch?v=", "youtu.be/"];
@@ -11,26 +13,34 @@ export async function validateString(input: string): Promise<Result<string>> {
     };
 }
 
-export async function validateSongId(input: string): Promise<Result<string>> {
-    const result = await get_library();
+export async function validateSong(input: string): Promise<Result<Song>> {
+    const songResult = await get_librarySongs(input);
+    if (songResult.success) return songResult;
 
-    if (!result.success) {
+    // Search for query
+    const libraryResult = await get_library();
+
+    if (!libraryResult.success) {
         return {
             success: false,
-            error: `Failed to fetch library: ${result.error}`
+            error: `Failed to fetch library: ${libraryResult.error}`
         };
     }
 
-    if (result.value.songs.some(e => e.id == input)) {
-        return {
-            success: true,
-            value: input
-        }
-    }
+    const searchOptions = fuzzySearch(libraryResult.value.songs, ['name', 'album', 'artist'], input, 5);
+
+    const matchResult = await promptOptions(
+        searchOptions,
+        input,
+        stringifySong,
+        "a song"
+    );
+
+    if (!matchResult.success) return matchResult;
 
     return {
-        success: false,
-        error: "Song ID not found"
+        success: true,
+        value: matchResult.value
     }
 }
 

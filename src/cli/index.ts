@@ -1,4 +1,4 @@
-import { validateLocalSource, validatePositiveInteger, validateSongId, validateString, validateYouTubeSource } from "./framework/validate";
+import { validateLocalSource, validatePositiveInteger, validateSong, validateString, validateYouTubeSource } from "./framework/validate";
 import { songAdd, songEdit, songRemove, songShow } from "./commands/song";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
 import { play, root, status, stop } from "./commands/general";
@@ -32,7 +32,7 @@ registerCommand({
             name: "id",
             description: "The ID of the song to play",
             params: false,
-            validate: validateSongId
+            validate: validateSong
         }
     ],
     flags: [],
@@ -123,7 +123,7 @@ registerCommand({
             name: "id",
             description: "The ID of the song to show",
             params: false,
-            validate: validateSongId
+            validate: validateSong
         }
     ],
     flags: [],
@@ -138,7 +138,7 @@ registerCommand({
             name: "id",
             description: "The ID of the song to show",
             params: false,
-            validate: validateSongId
+            validate: validateSong
         }
     ],
     flags: [
@@ -210,7 +210,7 @@ registerCommand({
             name: "id",
             description: "The ID of the song to remove",
             params: false,
-            validate: validateSongId
+            validate: validateSong
         }
     ],
     flags: [],
