@@ -2,11 +2,10 @@ import type { Argument, Flag } from "../framework/command";
 import type { Song } from "../../core/library";
 import { get_library, put_librarySongs } from "../connection";
 import { createSpinner, reserveLines } from "../formatter";
+import { CONCURRENT_DOWNLOADS } from "../../core/config";
 import { forEachConcurrent } from "../../core/task";
 import { stringifySong } from "../formatter";
 import { downloadSong } from "../downloader";
-
-const CONCURRENT_DOWNLOADS = 5;
 
 export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
     const libraryResult = await get_library();

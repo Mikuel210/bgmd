@@ -1,9 +1,10 @@
-import type { Song, SongData } from "../../core/library";
-import type { Argument, Flag } from "../framework/command";
 import { searchAlbums, searchArtists, searchTracks, tracksFromAlbum, tracksFromArtist, type Album, type Artist, type Track } from "../resolver";
-import { CONCURRENT_TASKS, forEachConcurrent, type Result } from "../../core/task";
+import { SongState, type Song, type SongData } from "../../core/library";
+import { forEachConcurrent, type Result } from "../../core/task";
+import type { Argument, Flag } from "../framework/command";
 import { createSpinner, reserveLines, stringifySong } from "../formatter";
 import { post_librarySongs } from "../connection";
+import { CONCURRENT_TASKS } from "../../core/config";
 import { sourceFromTrack } from "../downloader";
 
 interface Name {
@@ -29,7 +30,7 @@ async function captureTrack(track: Track): Promise<Result<Song>> {
         discNumber: track.discNumber,
         trackNumber: track.trackNumber,
         youtubeSource: url,
-        state: 0,
+        state: SongState.Captured,
         mood: {},
         tags: []
     };
@@ -66,14 +67,15 @@ async function capture<T extends Name>(
 
     // Check for exact match
     const entries = searchResult.value;
-    let entry = entries.find(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
+    let matches = entries.filter(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
+    let match: T;
 
     if (entries.length == 0) {
         console.error("No matches found");
         return 1;
-    }
-
-    if (!entry) {
+    } else if (matches.length == 1) {
+        match = matches[0]!;
+    } else {
         // Prompt options
         for (let i = 0; i < entries.length; i++) {
             const entry = entries[i]!;
@@ -102,11 +104,11 @@ async function capture<T extends Name>(
             return 1;
         }
 
-        entry = entries[number - 1]!;
+        match = entries[number - 1]!;
     }
 
     // Fetch tracks
-    const tracksResult = await getTracks(entry);
+    const tracksResult = await getTracks(match);
 
     if (!tracksResult.success) {
         console.error(tracksResult.error);

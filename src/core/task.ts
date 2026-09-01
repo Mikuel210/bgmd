@@ -1,4 +1,4 @@
-export const CONCURRENT_TASKS = 10;
+import { CONCURRENT_TASKS } from "./config";
 
 export type Result<T = void> =
     | { success: true, value: T }

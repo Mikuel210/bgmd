@@ -104,13 +104,20 @@ export async function validateYouTubeSource(input: string): Promise<Result<strin
 }
 
 export async function validatePositiveInteger(input: string): Promise<Result<number>> {
-    const number = parseInt(input);
+    const number = Number(input);
 
     if (Number.isNaN(number)) {
         return {
             success: false,
             error: "Value must be a number"
         };
+    }
+
+    if (!Number.isInteger(number)) {
+        return {
+            success: false,
+            error: "Value must be an integer"
+        }
     }
 
     if (number <= 0) {

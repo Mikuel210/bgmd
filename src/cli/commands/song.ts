@@ -20,17 +20,12 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
     };
 
     for (const flag of flags) {
-        if (flag.longName == "disc-number")
-            data.discNumber = flag.value as number;
-
-        if (flag.longName == "track-number")
-            data.trackNumber = flag.value as number;
-
-        if (flag.longName == "youtube-source")
-            data.youtubeSource = flag.value as string;
-
-        if (flag.longName == "local-source")
-            data.localSource = flag.value as string;
+        switch (flag.longName) {
+            case "disc-number": data.discNumber = flag.value as number; break;
+            case "track-number": data.trackNumber = flag.value as number; break;
+            case "youtube-source": data.youtubeSource = flag.value as string; break;
+            case "local-source": data.localSource = flag.value as string; break;
+        }
     }
 
     const addResult = await post_librarySongs(data, flags.some(e => e.longName == "track-number"));
@@ -72,40 +67,17 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
     let changesMade = false;
 
     for (const flag of flags) {
-        if (flag.longName == "name") {
-            song.name = flag.value as string;
-            changesMade = true;
+        switch (flag.longName) {
+            case "name": song.name = flag.value as string; break;
+            case "album": song.album = flag.value as string; break;
+            case "artist": song.artist = flag.value as string; break;
+            case "disc-number": song.discNumber = flag.value as number; break;
+            case "track-number": song.trackNumber = flag.value as number; break;
+            case "youtube-source": song.youtubeSource = flag.value as string; break;
+            case "local-source": song.localSource = flag.value as string; break;
         }
 
-        if (flag.longName == "album") {
-            song.album = flag.value as string;
-            changesMade = true;
-        }
-
-        if (flag.longName == "artist") {
-            song.artist = flag.value as string;
-            changesMade = true;
-        }
-
-        if (flag.longName == "disc-number") {
-            song.discNumber = flag.value as number;
-            changesMade = true;
-        }
-
-        if (flag.longName == "track-number") {
-            song.trackNumber = flag.value as number;
-            changesMade = true;
-        }
-
-        if (flag.longName == "youtube-source") {
-            song.youtubeSource = flag.value as string;
-            changesMade = true;
-        }
-
-        if (flag.longName == "local-source") {
-            song.localSource = flag.value as string;
-            changesMade = true;
-        }
+        changesMade = true;
     }
 
     // Edit song

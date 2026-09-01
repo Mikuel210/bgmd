@@ -160,7 +160,7 @@ export function removeSong(id: string): Promise<Result<Song>> {
     return withLibrary(async (library) => {
         const songIndex = library.songs.findIndex(e => e.id == id);
 
-        if (songIndex == -1) {
+        if (songIndex != -1) {
             const song = library.songs[songIndex]!;
             library.songs.splice(songIndex, 1);
 

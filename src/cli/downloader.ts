@@ -1,11 +1,10 @@
 import type { Result } from "../core/task";
 import type { Song } from "../core/library";
-import { HOME_PATH } from "../core/store";
-import path from "node:path";
 import type { Track } from "./resolver";
+import { MUSIC_PATH } from "../core/config";
+import path from "node:path";
 
 // Sanitize filenames
-const MUSIC_PATH = path.join(HOME_PATH, "Music");
 const ILLEGAL = /[\/\?<>\\:\*\|":]/g;
 const CONTROL = /[\x00-\x1f\x80-\x9f]/g;
 const RESERVED = /^\.+$/;

@@ -1,8 +1,8 @@
 import { forEachConcurrent, type Result } from "../core/task";
 import { createSpinner, reserveLines } from "./formatter";
+import { CONCURRENT_TASKS } from "../core/config";
 import { fetchResult } from "./connection";
 
-const CONCURRENT_TASKS = 10;
 const SEARCH_LIMIT = 5;
 
 export interface Artist {

@@ -1,7 +1,8 @@
 import type { Library, Song, SongData, Status } from "../core/library";
 import type { Result } from "../core/task";
+import { PORT } from "../core/config";
 
-const DAEMON_URL = "http://127.0.0.1:8686/";
+const DAEMON_URL = `http://127.0.0.1:${PORT}/`;
 
 export async function fetchResult<T>(url: string, options: RequestInit = {}): Promise<Result<T>> {
     try {

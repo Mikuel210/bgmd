@@ -1,11 +1,12 @@
 import { addSong, editSong, getLibrary, getSong, removeSong } from "./library";
 import { SongDataSchema, SongSchema } from "../core/library"
 import { getStatus, play, stop } from "./player"
+import { PORT } from "../core/config";
 import z from "zod"
 
 export function serve(): void {
     const server = Bun.serve({
-        port: 8686,
+        port: PORT,
         error: (e) => Response.json({ error: String(e) }, { status: 500 }),
         routes: {
             "/": {
@@ -139,7 +140,7 @@ export function serve(): void {
                         );
                     }
 
-                    return Response.json(result.value, { status: 404 });
+                    return Response.json(result.value, { status: 200 });
                 }
             }
         }
