@@ -1,6 +1,8 @@
 import type { Argument, Flag } from "../framework/command";
+import type { Album } from "../../core/library";
+import { DARK_GREY, logObject, stringifyAlbum } from "../formatter";
 import { get_libraryAlbums } from "../connection";
-import { stringifyAlbum } from "../formatter";
+import { styleText } from "node:util";
 
 export async function albumList(args: Argument[], flags: Flag[]): Promise<number> {
     const result = await get_libraryAlbums();
@@ -12,6 +14,22 @@ export async function albumList(args: Argument[], flags: Flag[]): Promise<number
 
     for (const album of result.value)
         console.log(stringifyAlbum(album));
+
+    return 0;
+}
+
+export async function albumShow(args: Argument[], flags: Flag[]): Promise<number> {
+    const album = args[0]!.value as Album;
+
+    logObject({
+        name: album.name,
+        artist: album.artist
+    }, false);
+
+    console.log("\nTracks:");
+
+    for (const song of album.songs)
+        console.log(`  ${song.trackNumber}. ${song.name} ${styleText(DARK_GREY, `[${song.id}]`)}`);
 
     return 0;
 }

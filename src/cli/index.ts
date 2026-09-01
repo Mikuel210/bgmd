@@ -1,11 +1,10 @@
-import { validateLocalSource, validatePositiveInteger, validateSong, validateString, validateYouTubeSource } from "./framework/validate";
-import { songAdd, songEdit, songRemove, songShow } from "./commands/song";
+import { validateAlbum, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateYouTubeSource } from "./framework/validate";
+import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
 import { play, root, status, stop } from "./commands/general";
 import { handle, registerCommand } from "./framework/handler"
-import { library } from "./commands/library";
 import { pull } from "./commands/pull";
-import { albumList } from "./commands/album";
+import { albumList, albumShow } from "./commands/album";
 
 let args = Bun.argv.slice(2);
 
@@ -49,11 +48,11 @@ registerCommand({
 });
 
 registerCommand({
-    route: ["library"],
-    description: "Show all songs in the library",
+    route: ["song", "list"],
+    description: "List all songs in the library",
     args: [],
     flags: [],
-    run: library
+    run: songList
 });
 
 registerCommand({
@@ -225,6 +224,21 @@ registerCommand({
     flags: [],
     run: albumList
 });
+
+registerCommand({
+    route: ["album", "show"],
+    description: "Show the properties of an album",
+    args: [
+        {
+            name: "album",
+            description: "The name of the album to show",
+            params: false,
+            validate: validateAlbum
+        }
+    ],
+    flags: [],
+    run: albumShow
+})
 
 registerCommand({
     route: ["capture", "song"],

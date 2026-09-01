@@ -1,6 +1,6 @@
 import type { Argument, Flag } from "../framework/command";
 import type { Song } from "../../core/library";
-import { get_library, put_librarySongs } from "../connection";
+import { get_librarySongs, put_librarySongs } from "../connection";
 import { createSpinner, reserveLines } from "../formatter";
 import { CONCURRENT_DOWNLOADS } from "../../core/config";
 import { forEachConcurrent } from "../../core/task";
@@ -8,20 +8,20 @@ import { stringifySong } from "../formatter";
 import { downloadSong } from "../downloader";
 
 export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
-    const libraryResult = await get_library();
+    const songsResult = await get_librarySongs();
 
-    if (!libraryResult.success) {
-        console.error(`Failed to fetch library: ${libraryResult.error}`);
+    if (!songsResult.success) {
+        console.error(`Failed to fetch library: ${songsResult.error}`);
         return 1;
     }
 
-    const toPull = libraryResult.value.songs.filter(e => e.youtubeSource && !e.localSource);
+    const toPull = songsResult.value.filter(e => e.youtubeSource && !e.localSource);
 
     // Download songs
     reserveLines(Math.min(CONCURRENT_DOWNLOADS, toPull.length));
 
     await forEachConcurrent(toPull, async (song, index) => {
-        const songString = stringifySong(song);
+        const songString = stringifySong(song, false);
         const spinner = createSpinner(`Downloading song: ${songString}`, index);
         const downloadResult = await downloadSong(song);
 

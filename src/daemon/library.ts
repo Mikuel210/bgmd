@@ -199,6 +199,9 @@ export function getAlbums(): Promise<Result<Album[]>> {
             album.songs.push(song);
         }
 
+        for (const album of albums)
+            album.songs.sort((a, b) => a.trackNumber - b.trackNumber);
+
         return {
             success: true,
             value: albums

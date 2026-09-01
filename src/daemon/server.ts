@@ -46,7 +46,7 @@ export function serve(): void {
                     return Response.json(status, { status: 200 });
                 }
             },
-            "/library": {
+            "/library/songs": {
                 GET: async() => {
                     const result = await getLibrary();
 
@@ -57,10 +57,9 @@ export function serve(): void {
                         );
                     }
 
-                    return Response.json(result.value, { status: 200 });
-                }
-            },
-            "/library/songs": {
+                    return Response.json(result.value.songs, { status: 200 });
+                },
+
                 POST: async (request) => {
                     // Validate song
                     const body = await request.json() as Record<string, any>;

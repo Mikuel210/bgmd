@@ -1,11 +1,11 @@
 import type { Argument, Flag } from "../framework/command";
 import type { Song, Status } from "../../core/library";
 import { post_playback, get_playback, delete_playback } from "../connection";
-import { stringifySong } from "../formatter";
+import { logTitle, stringifySong } from "../formatter";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
-    console.log("Usage: bgmctl <command> [<args>]");
-    console.log("See: bgmctl --help");
+    logTitle("usage", "bgmctl <command> [<args>]");
+    logTitle("see", "bgmctl --help");
     return 0;
 }
 

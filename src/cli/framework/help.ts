@@ -1,64 +1,39 @@
 import type { Command, Flag } from "./command";
 import { commands, isRoot } from "./handler";
-
-const EXTRA_SPACES = 3;
+import { styleText } from "node:util";
+import { logObject, logTitle } from "../formatter";
 
 export function showHelp(command: Command): void {
-    console.log(`Usage: ${getUsage(command)}`);
-    console.log(`Description: ${command.description}`);
+    logTitle("usage", getUsage(command));
+    logTitle("description", command.description);
 
     if (command.args.length > 0) {
         console.log("\nArguments:");
-        const spaces = Math.max(...command.args.map(e => e.name.length)) + EXTRA_SPACES;
-
-        for (const argument of command.args) {
-            const spaceString = ' '.repeat(spaces - argument.name.length);
-            console.log(`  ${argument.name}${spaceString}${argument.description}`);
-        }
+        logObject(Object.fromEntries(command.args.map(e => [e.name, e.description])));
     }
 
     if (command.flags.length > 0) {
         console.log("\nFlags:");
-        const names: Record<string, Flag> = {};
 
-        for (const flag of command.flags) {
+        const getName = (flag: Flag) => {
             let name = `--${flag.longName}`;
 
             if (flag.shortName)
                 name = `-${flag.shortName}, ${name}`;
 
-            names[name] = flag;
-        }
+            return name
+        };
 
-        const spaces = Math.max(...Object.keys(names).map(e => e.length)) + EXTRA_SPACES;
-
-        for (const flag of command.flags) {
-            const name = Object.keys(names).find(e => names[e] == flag)!;
-            const spaceString = ' '.repeat(spaces - name.length);
-
-            console.log(`  ${name}${spaceString}${flag.description}`);
-        }
+        logObject(Object.fromEntries(command.flags.map(e => [getName(e), e.description])));
     }
 
     const subcommands = getSubcommands(command);
 
     if (subcommands.length > 0) {
         console.log(`\n${isRoot(command) ? "Available commands:" : "Subcommands:"}`);
-        const routes: Record<string, Command> = {};
 
-        for (const command of subcommands) {
-            const name = `bgmctl ${command.route.join(' ')}`;
-            routes[name] = command;
-        }
-
-        const spaces = Math.max(...Object.keys(routes).map(e => e.length)) + EXTRA_SPACES;
-
-        for (const command of subcommands) {
-            const route = Object.keys(routes).find(e => routes[e] == command)!;
-            const spaceString = ' '.repeat(spaces - route.length);
-
-            console.log(`  ${route}${spaceString}${command.description}`);
-        }
+        const getRoute = (command: Command) => `bgmctl ${command.route.join(' ')}`;
+        logObject(Object.fromEntries(subcommands.map(e => [getRoute(e), e.description])));
     }
 }
 

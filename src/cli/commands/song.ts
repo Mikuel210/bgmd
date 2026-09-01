@@ -1,7 +1,21 @@
 import type { Argument, Flag } from "../framework/command";
 import { SongState, type Song, type SongData } from "../../core/library";
-import { delete_librarySongs, get_librarySongs, post_librarySongs, put_librarySongs } from "../connection";
-import { stringifySong } from "../formatter";
+import { delete_librarySongsId, get_librarySongs, post_librarySongs, put_librarySongs } from "../connection";
+import { logObject, logTitle, stringifySong } from "../formatter";
+
+export async function songList(args: Argument[], flags: Flag[]): Promise<number> {
+    const result = await get_librarySongs();
+
+    if (!result.success) {
+        console.error(`Failed to fetch library: ${result.error}`);
+        return 1;
+    }
+
+    for (const song of result.value)
+        console.log(stringifySong(song));
+
+    return 0;
+}
 
 export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> {
     const name = args[0]!.value as string;
@@ -41,7 +55,16 @@ export async function songAdd(args: Argument[], flags: Flag[]): Promise<number> 
 
 export async function songShow(args: Argument[], flags: Flag[]): Promise<number> {
     const song = args[0]!.value as Song;
-    console.log(song);
+
+    logObject({
+        "id": song.id,
+        "name": song.name,
+        "artist": song.artist,
+        "disc number": song.discNumber,
+        "track number": song.trackNumber,
+        "youtube source": song.youtubeSource ?? "(not set)",
+        "local source": song.localSource ?? "(not set)"
+    }, false);
 
     return 0;
 }
@@ -82,7 +105,7 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
 
 export async function songRemove(args: Argument[], flags: Flag[]): Promise<number> {
     const song = args[0]!.value as Song;
-    const deleteResult = await delete_librarySongs(song.id);
+    const deleteResult = await delete_librarySongsId(song.id);
 
     if (!deleteResult.success) {
         console.error(`Failed to remove song: ${deleteResult.error}`);

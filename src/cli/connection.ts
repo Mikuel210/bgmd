@@ -46,11 +46,11 @@ export async function delete_playback(): Promise<Result<Status>> {
     });
 }
 
-export async function get_library(): Promise<Result<Library>> {
-    return await fetchResult(DAEMON_URL + "library");
+export async function get_librarySongs(): Promise<Result<Song[]>> {
+    return await fetchResult(DAEMON_URL + "library/songs");
 }
 
-export async function get_librarySongs(id: string): Promise<Result<Song>> {
+export async function get_librarySongsId(id: string): Promise<Result<Song>> {
     return await fetchResult(DAEMON_URL + `library/songs/${id}`);
 }
 
@@ -70,7 +70,7 @@ export async function put_librarySongs(song: Song): Promise<Result<Song>> {
     });
 }
 
-export async function delete_librarySongs(id: string): Promise<Result<Song>> {
+export async function delete_librarySongsId(id: string): Promise<Result<Song>> {
     return await fetchResult(DAEMON_URL + `library/songs/${id}`, {
         method: "DELETE"
     });

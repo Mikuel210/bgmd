@@ -91,7 +91,7 @@ async function capture<T extends { name: string }>(
             return;
         }
 
-        spinner.succeed(`Song captured: ${stringifySong(captureResult.value)}`);
+        spinner.succeed(`Song captured: ${stringifySong(captureResult.value, false)}`);
     });
 
     return 0;

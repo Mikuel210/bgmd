@@ -1,16 +1,48 @@
 import type { Album, Song } from "../core/library";
-import spinners from "unicode-animations";
-import { styleText } from "node:util";
 import type { Result } from "../core/task";
+import { validatePositiveInteger } from "./framework/validate";
+import { styleText } from "node:util";
+import spinners from "unicode-animations";
 import Fuse from "fuse.js";
 
-export function stringifySong(song: Song): string {
-    return `[${song.id}] ${song.artist} - ${song.name} (${song.album})`;
+export const DARK_TEAL = "#80CBC4";
+export const LIGHT_TEAL = "#B2DFDB";
+export const DARK_GREY = "#9E9E9E";
+export const LIGHT_GREY = "#BDBDBD";
+const EXTRA_SPACES = 3;
+
+export function logTitle(key: string, value?: any): void {
+    key = key.toLowerCase();
+
+    if (value)
+        console.log(styleText(DARK_TEAL, `${key}: `) + value);
+    else
+        console.log(styleText(DARK_TEAL, key));
+}
+
+export function logObject(object: Record<string, any>, indented: boolean = true): void {
+    const spaces = Math.max(...Object.keys(object).map(e => e.length)) + EXTRA_SPACES;
+
+    for (const key of Object.keys(object)) {
+        const value = object[key]!;
+        const space = ' '.repeat(spaces - key.length);
+
+        if (indented)
+            console.log(`  ${styleText(LIGHT_TEAL, key)}${space}${value}`);
+        else
+            console.log(`${styleText(DARK_TEAL, key)}${space}${value}`);
+    }
+}
+
+export function stringifySong(song: Song, colors: boolean = true): string {
+    const id = colors ? styleText(DARK_GREY, `[${song.id}]`) : `[${song.id}]`;
+    const album = colors ? styleText(LIGHT_GREY, `(${song.album})`) : `(${song.album})`;
+    return `${id} ${song.artist} - ${song.name} ${album}`;
 }
 
 export function stringifyAlbum(album: Album): string {
     const tracks = `${album.songs.length} track${album.songs.length == 1 ? '' : 's'}`;
-    return `${album.artist} - ${album.name} (${tracks})`;
+    return `${album.artist} - ${album.name} ${styleText(DARK_GREY, `(${tracks})`)}`;
 }
 
 // Prompt options
@@ -26,15 +58,19 @@ export async function promptOptions<T extends { name: string }>(
     entries: T[],
     query: string,
     stringify: (entry: T) => string,
-    promptName: string)
-    : Promise<Result<T>>
-{
-    let matches = entries.filter(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
+    promptText: string)
+    : Promise<Result<T>> {
+    const matches = entries.filter(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
 
     if (entries.length == 0) {
         return {
             success: false,
             error: "No matches found"
+        };
+    } else if (entries.length == 1) {
+        return {
+            success: true,
+            value: entries[0]!
         };
     } else if (matches.length == 1) {
         return {
@@ -49,36 +85,24 @@ export async function promptOptions<T extends { name: string }>(
         }
 
         const range = `(1 - ${entries.length})`;
-        const input = prompt(`\nSelect ${promptName} to add ${range}:`) ?? "";
-        let number;
+        const input = prompt(`\nSelect ${promptText} ${range}:`) ?? "";
 
-        try {
-            number = parseInt(input);
-        } catch (e) {
-            return {
-                success: false,
-                error: `Value must be a number ${range}`
-            };
-        }
+        let numberResult = await validatePositiveInteger(input);
+        if (!numberResult.success) return numberResult;
 
         // Validate range
-        if (number < 1) {
-            return {
-                success: false,
-                error: "Value must be greater than 0"
-            };
-        }
-
-        if (number > entries.length) {
+        if (numberResult.value > entries.length) {
             return {
                 success: false,
                 error: `Value must be lower than ${entries.length + 1}`
             };
         }
 
+        console.log();
+
         return {
             success: true,
-            value: entries[number - 1]!
+            value: entries[numberResult.value - 1]!
         };
     }
 }

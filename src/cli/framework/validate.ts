@@ -1,7 +1,7 @@
-import type { Song } from "../../core/library";
+import type { Album, Song } from "../../core/library";
 import type { Result } from "../../core/task";
-import { get_library, get_librarySongs } from "../connection";
-import { fuzzySearch, promptOptions, stringifySong } from "../formatter";
+import { get_libraryAlbums, get_librarySongs, get_librarySongsId } from "../connection";
+import { fuzzySearch, promptOptions, stringifyAlbum, stringifySong } from "../formatter";
 
 const HTTP_PREFIXES = ["https://www.", "https://", "http://www.", "http://"];
 const YOUTUBE_PREFIXES = ["youtube.com/watch?v=", "youtu.be/"];
@@ -14,26 +14,54 @@ export async function validateString(input: string): Promise<Result<string>> {
 }
 
 export async function validateSong(input: string): Promise<Result<Song>> {
-    const songResult = await get_librarySongs(input);
+    const songResult = await get_librarySongsId(input);
     if (songResult.success) return songResult;
 
     // Search for query
-    const libraryResult = await get_library();
+    const songsResult = await get_librarySongs();
 
-    if (!libraryResult.success) {
+    if (!songsResult.success) {
         return {
             success: false,
-            error: `Failed to fetch library: ${libraryResult.error}`
+            error: `Failed to fetch library: ${songsResult.error}`
         };
     }
 
-    const searchOptions = fuzzySearch(libraryResult.value.songs, ['name', 'album', 'artist'], input, 5);
+    const searchOptions = fuzzySearch(songsResult.value, ['name', 'album', 'artist'], input, 5);
 
     const matchResult = await promptOptions(
         searchOptions,
         input,
         stringifySong,
         "a song"
+    );
+
+    if (!matchResult.success) return matchResult;
+
+    return {
+        success: true,
+        value: matchResult.value
+    }
+}
+
+export async function validateAlbum(input: string): Promise<Result<Album>> {
+    const albumsResult = await get_libraryAlbums();
+
+    if (!albumsResult.success) {
+        return {
+            success: false,
+            error: `Failed to fetch albums: ${albumsResult.error}`
+        };
+    }
+
+    // Search for query
+    const searchOptions = fuzzySearch(albumsResult.value, ['name', 'artist'], input, 5);
+
+    const matchResult = await promptOptions(
+        searchOptions,
+        input,
+        stringifyAlbum,
+        "an album"
     );
 
     if (!matchResult.success) return matchResult;
@@ -114,6 +142,13 @@ export async function validateYouTubeSource(input: string): Promise<Result<strin
 }
 
 export async function validatePositiveInteger(input: string): Promise<Result<number>> {
+    if (input.trim() === '') {
+        return {
+            success: false,
+            error: "Value can't be empty"
+        };
+    }
+
     const number = Number(input);
 
     if (Number.isNaN(number)) {
