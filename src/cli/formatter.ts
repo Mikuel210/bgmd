@@ -30,23 +30,24 @@ export function createSpinner(message: string, index: number) {
 
     function writeLine(content: string) {
         if (index >= reservedLines) {
-            reservedLines++;
-            process.stdout.write('\n');
+            const difference = index - reservedLines + 1;
+            reservedLines += difference;
+            process.stdout.write('\n'.repeat(difference));
         }
 
         process.stdout.write(`\x1b[${reservedLines - index}A`);
-        process.stdout.write(`\r\x1b[K${content}`);
+        process.stdout.write(`\r\x1b[K  ${content}`);
         process.stdout.write(`\x1b[${reservedLines - index}B`);
     }
 
     const timer = setInterval(() => {
-        writeLine(`  ${frames[frameIndex++ % frames.length]} ${text}`);
+        writeLine(`${frames[frameIndex++ % frames.length]} ${text}`);
     }, interval);
 
     return {
         update(message: string) { text = message; },
-        succeed(message: string) { clearInterval(timer); writeLine(styleText("green", `  ✔ ${message}`)); },
-        fail(message: string) { clearInterval(timer); writeLine(styleText("red", `  ✖ ${message}`)); }
+        succeed(message: string) { clearInterval(timer); writeLine(styleText("green", `✔ ${message}`)); },
+        fail(message: string) { clearInterval(timer); writeLine(styleText("red", `✖ ${message}`)); }
     };
 }
 
