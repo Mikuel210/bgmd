@@ -1,10 +1,10 @@
 import { validateAlbum, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateYouTubeSource } from "./framework/validate";
 import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
+import { albumEdit, albumList, albumShow } from "./commands/album";
 import { play, root, status, stop } from "./commands/general";
 import { handle, registerCommand } from "./framework/handler"
 import { pull } from "./commands/pull";
-import { albumList, albumShow } from "./commands/album";
 
 let args = Bun.argv.slice(2);
 
@@ -31,7 +31,6 @@ registerCommand({
         {
             name: "song",
             description: "The name or ID of the song to play",
-            params: false,
             validate: validateSong
         }
     ],
@@ -62,19 +61,16 @@ registerCommand({
         {
             name: "name",
             description: "The name of the song to add",
-            params: false,
             validate: validateString
         },
         {
             name: "album",
             description: "The album of the song to add",
-            params: false,
             validate: validateString
         },
         {
             name: "artist",
             description: "The artist of the song to add",
-            params: false,
             validate: validateString
         }
     ],
@@ -83,32 +79,24 @@ registerCommand({
             longName: "disc-number",
             shortName: 'd',
             description: "Set the disc number for the song (default 1)",
-            switch: false,
-            params: false,
             validate: validatePositiveInteger
         },
         {
             longName: "track-number",
             shortName: 't',
             description: "Set the track number for the song (default next empty in disc)",
-            switch: false,
-            params: false,
             validate: validatePositiveInteger
         },
         {
             longName: "youtube-source",
             shortName: 'y',
             description: "Add a YouTube source for the song",
-            switch: false,
-            params: false,
             validate: validateYouTubeSource
         },
         {
             longName: "local-source",
             shortName: 'l',
             description: "Add a local source for the song",
-            switch: false,
-            params: false,
             validate: validateLocalSource
         }
     ],
@@ -122,7 +110,6 @@ registerCommand({
         {
             name: "song",
             description: "The name or ID of the song to show",
-            params: false,
             validate: validateSong
         }
     ],
@@ -137,7 +124,6 @@ registerCommand({
         {
             name: "song",
             description: "The name or ID of the song to show",
-            params: false,
             validate: validateSong
         }
     ],
@@ -146,56 +132,42 @@ registerCommand({
             longName: "name",
             shortName: 'n',
             description: "Change the name of the song",
-            switch: false,
-            params: false,
             validate: validateString
         },
         {
             longName: "album",
             shortName: 'a',
             description: "Change the album of the song",
-            switch: false,
-            params: false,
             validate: validateString
         },
         {
             longName: "artist",
             shortName: 'x',
             description: "Change the artist of the song",
-            switch: false,
-            params: false,
             validate: validateString
         },
         {
             longName: "disc-number",
             shortName: 'd',
             description: "Change the disc number for the song",
-            switch: false,
-            params: false,
             validate: validatePositiveInteger
         },
         {
             longName: "track-number",
             shortName: 't',
             description: "Change the track number for the song",
-            switch: false,
-            params: false,
             validate: validatePositiveInteger
         },
         {
             longName: "youtube-source",
             shortName: 'y',
             description: "Change the YouTube source of the song",
-            switch: false,
-            params: false,
             validate: validateYouTubeSource
         },
         {
             longName: "local-source",
             shortName: 'l',
             description: "Change the local source of the song",
-            switch: false,
-            params: false,
             validate: validateLocalSource
         }
     ],
@@ -209,7 +181,6 @@ registerCommand({
         {
             name: "song",
             description: "The name or ID of the song to remove",
-            params: false,
             validate: validateSong
         }
     ],
@@ -232,13 +203,39 @@ registerCommand({
         {
             name: "album",
             description: "The name of the album to show",
-            params: false,
             validate: validateAlbum
         }
     ],
     flags: [],
     run: albumShow
-})
+});
+
+registerCommand({
+    route: ["album", "edit"],
+    description: "Edit the properties of an album",
+    args: [
+        {
+            name: "album",
+            description: "The name of the album to edit",
+            validate: validateAlbum
+        }
+    ],
+    flags: [
+        {
+            longName: "name",
+            shortName: 'n',
+            description: "Change the name of the album",
+            validate: validateString
+        },
+        {
+            longName: "artist",
+            shortName: 'a',
+            description: "Change the artist of the album",
+            validate: validateString
+        }
+    ],
+    run: albumEdit
+});
 
 registerCommand({
     route: ["capture", "song"],
@@ -247,7 +244,6 @@ registerCommand({
         {
             name: "name",
             description: "The name of the song to capture",
-            params: false,
             validate: validateString
         }
     ],
@@ -262,7 +258,6 @@ registerCommand({
         {
             name: "name",
             description: "The name of the album to capture",
-            params: false,
             validate: validateString
         }
     ],
@@ -277,7 +272,6 @@ registerCommand({
         {
             name: "name",
             description: "The name of the artist to capture",
-            params: false,
             validate: validateString
         }
     ],

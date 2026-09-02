@@ -1,4 +1,4 @@
-import { LibrarySchema, type Album, type Library, type Song, type SongData } from "../core/library";
+import { LibrarySchema, type Album, type AlbumData, type Library, type Song, type SongData } from "../core/library";
 import type { Result } from "../core/task";
 import { load, save } from "../core/store";
 
@@ -205,6 +205,55 @@ export function getAlbums(): Promise<Result<Album[]>> {
         return {
             success: true,
             value: albums
+        };
+    });
+}
+
+export async function editAlbum(oldData: AlbumData, newData: AlbumData): Promise<Result<Album>> {
+    const albumsResult = await getAlbums();
+
+    return withLibrary(async (library) => {
+        if (!albumsResult.success) return albumsResult;
+
+        // Find match
+        const match = albumsResult.value.find(e => e.name == oldData.name && e.artist == oldData.artist);
+
+        if (!match) {
+            return {
+                success: false,
+                error: "Album not found"
+            };
+        }
+
+        if (oldData.name == newData.name && oldData.artist == newData.artist) {
+            return {
+                success: true,
+                value: match
+            };
+        }
+
+        // Find collision
+        const collision = albumsResult.value.find(e => e.name == newData.name && e.artist == newData.artist);
+
+        if (collision) {
+            return {
+                success: false,
+                error: "An album with the same name and artist already exists"
+            };
+        }
+
+        // Edit songs
+        const ids = match.songs.map(e => e.id);
+        const songs = library.songs.filter(e => ids.includes(e.id));
+
+        for (const song of songs) {
+            song.album = newData.name;
+            song.artist = newData.artist;
+        }
+
+        return {
+            success: true,
+            value: { ...newData, songs }
         };
     });
 }

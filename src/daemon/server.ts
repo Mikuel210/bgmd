@@ -1,5 +1,5 @@
-import { addSong, editSong, getAlbums, getLibrary, getSong, removeSong } from "./library";
-import { SongDataSchema, SongSchema } from "../core/library"
+import { addSong, editAlbum, editSong, getAlbums, getLibrary, getSong, removeSong } from "./library";
+import { AlbumDataSchema, SongDataSchema, SongSchema } from "../core/library"
 import { getStatus, play, stop } from "./player"
 import { PORT } from "../core/config";
 import z from "zod"
@@ -69,7 +69,7 @@ export function serve(): void {
                         return Response.json(
                             { error: "Invalid song", issues: z.prettifyError(dataResult.error!) },
                             { status: 400 }
-                        )
+                        );
                     }
 
                     const data = dataResult.data;
@@ -95,7 +95,7 @@ export function serve(): void {
                         return Response.json(
                             { error: "Invalid song", issues: z.prettifyError(songResult.error!) },
                             { status: 400 }
-                        )
+                        );
                     }
 
                     const song = songResult.data;
@@ -150,10 +150,42 @@ export function serve(): void {
                         return Response.json(
                             { error: result.error },
                             { status: 500 }
-                        )
+                        );
                     }
 
                     return Response.json(result.value, { status: 200 });
+                },
+
+                PUT: async (request) => {
+                    const body = await request.json() as Record<string, any>;
+                    const oldDataResult = AlbumDataSchema.safeParse(body.oldData);
+                    const newDataResult = AlbumDataSchema.safeParse(body.newData);
+
+                    if (!oldDataResult.success) {
+                        return Response.json(
+                            { error: "Invalid album", issues: z.prettifyError(oldDataResult.error!) },
+                            { status: 400 }
+                        );
+                    }
+
+                    if (!newDataResult.success) {
+                        return Response.json(
+                            { error: "Invalid album", issues: z.prettifyError(newDataResult.error!) },
+                            { status: 400 }
+                        );
+                    }
+
+                    // Update album
+                    const editResult = await editAlbum(oldDataResult.data, newDataResult.data);
+
+                    if (!editResult.success) {
+                        return Response.json(
+                            { error: editResult.error },
+                            { status: 500 }
+                        );
+                    }
+
+                    return Response.json(editResult.value, { status: 200 });
                 }
             }
         }

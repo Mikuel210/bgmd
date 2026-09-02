@@ -1,4 +1,4 @@
-import type { Album, Library, Song, SongData, Status } from "../core/library";
+import type { Album, AlbumData, Library, Song, SongData, Status } from "../core/library";
 import type { Result } from "../core/task";
 import { PORT } from "../core/config";
 
@@ -77,5 +77,13 @@ export async function delete_librarySongsId(id: string): Promise<Result<Song>> {
 }
 
 export async function get_libraryAlbums(): Promise<Result<Album[]>> {
-    return await fetchResult(DAEMON_URL + `library/albums`);
+    return await fetchResult(DAEMON_URL + "library/albums");
+}
+
+export async function put_libraryAlbums(oldData: AlbumData, newData: AlbumData): Promise<Result<Album>> {
+    return await fetchResult(DAEMON_URL + "library/albums", {
+        method: "PUT",
+        body: JSON.stringify({ oldData, newData }),
+        headers: { "Content-type": "application/json" }
+    });
 }

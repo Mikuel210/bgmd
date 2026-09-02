@@ -88,10 +88,10 @@ export async function songEdit(args: Argument[], flags: Flag[]): Promise<number>
     }
 
     // Edit song
-    const editResult = await put_librarySongs(song);
+    const result = await put_librarySongs(song);
 
-    if (!editResult.success) {
-        console.error(editResult.error);
+    if (!result.success) {
+        console.error(result.error);
         return 1;
     }
 

@@ -42,7 +42,6 @@ function getUsage(command: Command): string {
         return "bgmctl <command> [<args>]";
 
     let args = command.args.map(e => `<${e.name}>`).join(' ');
-    if (command.args.some(e => e.params)) args += "...";
 
     let flags = command.flags.map(flag => {
         let name = `--${flag.longName}`;
@@ -50,14 +49,7 @@ function getUsage(command: Command): string {
         if (flag.shortName)
             name = `-${flag.shortName} | ${name}`;
 
-        if (flag.switch)
-            return `[${name}]`;
-
         let value = `<${flag.longName}>`;
-
-        if (flag.params)
-            value += "...";
-
         return `[${name} ${value}]`;
     }).join(' ');
 
