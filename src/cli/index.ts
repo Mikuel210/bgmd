@@ -1,7 +1,7 @@
 import { validateAlbum, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateYouTubeSource } from "./framework/validate";
 import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
+import { albumEdit, albumList, albumRemove, albumShow } from "./commands/album";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
-import { albumEdit, albumList, albumShow } from "./commands/album";
 import { play, root, status, stop } from "./commands/general";
 import { handle, registerCommand } from "./framework/handler"
 import { pull } from "./commands/pull";
@@ -235,6 +235,20 @@ registerCommand({
         }
     ],
     run: albumEdit
+});
+
+registerCommand({
+    route: ["album", "remove"],
+    description: "Remove an album from the library",
+    args: [
+        {
+            name: "album",
+            description: "The name of the album to remove",
+            validate: validateAlbum
+        }
+    ],
+    flags: [],
+    run: albumRemove
 });
 
 registerCommand({

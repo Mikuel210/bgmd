@@ -257,3 +257,35 @@ export async function editAlbum(oldData: AlbumData, newData: AlbumData): Promise
         };
     });
 }
+
+export async function removeAlbum(data: AlbumData): Promise<Result<Album>> {
+    const albumsResult = await getAlbums();
+
+    return withLibrary(async (library) => {
+        if (!albumsResult.success) return albumsResult;
+
+        // Find match
+        const match = albumsResult.value.find(e => e.name == data.name && e.artist == data.artist);
+
+        if (!match) {
+            return {
+                success: false,
+                error: "Album not found"
+            };
+        }
+
+        // Delete songs
+        const ids = match.songs.map(e => e.id);
+        const songs = library.songs.filter(e => ids.includes(e.id));
+
+        for (const song of songs) {
+            const index = library.songs.indexOf(song);
+            library.songs.splice(index, 1);
+        }
+
+        return {
+            success: true,
+            value: match
+        };
+    });
+}

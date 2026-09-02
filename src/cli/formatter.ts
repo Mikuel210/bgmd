@@ -6,29 +6,19 @@ import spinners from "unicode-animations";
 import Fuse from "fuse.js";
 
 export const DARK_TEAL = "#80CBC4";
-export const LIGHT_TEAL = "#B2DFDB";
 export const DARK_GREY = "#9E9E9E";
 export const LIGHT_GREY = "#BDBDBD";
 const EXTRA_SPACES = 3;
 
-export function logTitle(key: string, value?: any): void {
-    key = key.toLowerCase();
-
-    if (value)
-        console.log(styleText(DARK_TEAL, `${key}: `) + value);
-    else
-        console.log(styleText(DARK_TEAL, key));
-}
-
-export function logObject(object: Record<string, any>, indented: boolean = true): void {
+export function logObject(object: Record<string, any>, indented: boolean = false): void {
     const spaces = Math.max(...Object.keys(object).map(e => e.length)) + EXTRA_SPACES;
 
-    for (const key of Object.keys(object)) {
-        const value = object[key]!;
+    for (let key of Object.keys(object)) {
+        let value = object[key]!;
         const space = ' '.repeat(spaces - key.length);
 
         if (indented)
-            console.log(`  ${styleText(LIGHT_TEAL, key)}${space}${value}`);
+            console.log(`  ${key}${space}${value}`);
         else
             console.log(`${styleText(DARK_TEAL, key)}${space}${value}`);
     }
@@ -59,7 +49,8 @@ export async function promptOptions<T extends { name: string }>(
     query: string,
     stringify: (entry: T) => string,
     promptText: string)
-    : Promise<Result<T>> {
+    : Promise<Result<T>>
+{
     const matches = entries.filter(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
 
     if (entries.length == 0) {
@@ -72,7 +63,7 @@ export async function promptOptions<T extends { name: string }>(
             success: true,
             value: entries[0]!
         };
-    } else if (matches.length == 1) {
+    } else if (matches.length == 1 && matches[0] === entries[0]) {
         return {
             success: true,
             value: matches[0]!

@@ -1,14 +1,14 @@
 import type { Argument, Flag } from "../framework/command";
 import type { Album, AlbumData } from "../../core/library";
 import { DARK_GREY, logObject, stringifyAlbum } from "../formatter";
-import { get_libraryAlbums, put_libraryAlbums } from "../connection";
+import { delete_libraryAlbums, get_libraryAlbums, put_libraryAlbums } from "../connection";
 import { styleText } from "node:util";
 
 export async function albumList(args: Argument[], flags: Flag[]): Promise<number> {
     const result = await get_libraryAlbums();
 
     if (!result.success) {
-        console.error(result.error);
+        console.error(`Failed to list albums: ${result.error}`);
         return 1;
     }
 
@@ -24,7 +24,7 @@ export async function albumShow(args: Argument[], flags: Flag[]): Promise<number
     logObject({
         name: album.name,
         artist: album.artist
-    }, false);
+    });
 
     console.log("\nTracks:");
 
@@ -54,7 +54,7 @@ export async function albumEdit(args: Argument[], flags: Flag[]): Promise<number
     const result = await put_libraryAlbums(oldData, newData);
 
     if (!result.success) {
-        console.error(result.error);
+        console.error(`Failed to edit album: ${result.error}`);
         return 1;
     }
 
@@ -64,4 +64,17 @@ export async function albumEdit(args: Argument[], flags: Flag[]): Promise<number
         console.warn("No changes made");
 
     return 0;
+}
+
+export async function albumRemove(args: Argument[], flags: Flag[]): Promise<number> {
+    const album = args[0]!.value as Album;
+    const result = await delete_libraryAlbums({ name: album.name, artist: album.artist });
+
+    if (!result.success) {
+        console.error(`Failed to remove album: ${result.error}`);
+        return 1;
+    }
+
+    console.log(`Album removed: ${stringifyAlbum(result.value)}`);
+    return 1;
 }

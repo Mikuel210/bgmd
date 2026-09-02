@@ -1,15 +1,14 @@
 import type { Command, Flag } from "./command";
 import { commands, isRoot } from "./handler";
-import { styleText } from "node:util";
-import { logObject, logTitle } from "../formatter";
+import { logObject } from "../formatter";
 
 export function showHelp(command: Command): void {
-    logTitle("usage", getUsage(command));
-    logTitle("description", command.description);
+    console.log(`usage: ${getUsage(command)}`);
+    console.log(`description: ${command.description}`);
 
     if (command.args.length > 0) {
         console.log("\nArguments:");
-        logObject(Object.fromEntries(command.args.map(e => [e.name, e.description])));
+        logObject(Object.fromEntries(command.args.map(e => [e.name, e.description])), true);
     }
 
     if (command.flags.length > 0) {
@@ -24,7 +23,7 @@ export function showHelp(command: Command): void {
             return name
         };
 
-        logObject(Object.fromEntries(command.flags.map(e => [getName(e), e.description])));
+        logObject(Object.fromEntries(command.flags.map(e => [getName(e), e.description])), true);
     }
 
     const subcommands = getSubcommands(command);
@@ -33,7 +32,7 @@ export function showHelp(command: Command): void {
         console.log(`\n${isRoot(command) ? "Available commands:" : "Subcommands:"}`);
 
         const getRoute = (command: Command) => `bgmctl ${command.route.join(' ')}`;
-        logObject(Object.fromEntries(subcommands.map(e => [getRoute(e), e.description])));
+        logObject(Object.fromEntries(subcommands.map(e => [getRoute(e), e.description])), true);
     }
 }
 
@@ -42,18 +41,7 @@ function getUsage(command: Command): string {
         return "bgmctl <command> [<args>]";
 
     let args = command.args.map(e => `<${e.name}>`).join(' ');
-
-    let flags = command.flags.map(flag => {
-        let name = `--${flag.longName}`;
-
-        if (flag.shortName)
-            name = `-${flag.shortName} | ${name}`;
-
-        let value = `<${flag.longName}>`;
-        return `[${name} ${value}]`;
-    }).join(' ');
-
-    return `bgmctl ${args} ${flags}`;
+    return `bgmctl ${args}`;
 }
 
 function getSubcommands(command: Command): Command[] {

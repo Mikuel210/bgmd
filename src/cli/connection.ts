@@ -87,3 +87,11 @@ export async function put_libraryAlbums(oldData: AlbumData, newData: AlbumData):
         headers: { "Content-type": "application/json" }
     });
 }
+
+export async function delete_libraryAlbums(data: AlbumData): Promise<Result<Album>> {
+    return await fetchResult(DAEMON_URL + "library/albums", {
+        method: "DELETE",
+        body: JSON.stringify(data),
+        headers: { "Content-type": "application/json" }
+    });
+}

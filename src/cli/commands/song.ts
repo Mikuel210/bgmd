@@ -1,7 +1,7 @@
 import type { Argument, Flag } from "../framework/command";
 import { SongState, type Song, type SongData } from "../../core/library";
 import { delete_librarySongsId, get_librarySongs, post_librarySongs, put_librarySongs } from "../connection";
-import { logObject, logTitle, stringifySong } from "../formatter";
+import { logObject, stringifySong } from "../formatter";
 
 export async function songList(args: Argument[], flags: Flag[]): Promise<number> {
     const result = await get_librarySongs();
@@ -64,7 +64,7 @@ export async function songShow(args: Argument[], flags: Flag[]): Promise<number>
         "track number": song.trackNumber,
         "youtube source": song.youtubeSource ?? "(not set)",
         "local source": song.localSource ?? "(not set)"
-    }, false);
+    });
 
     return 0;
 }
