@@ -60,5 +60,5 @@ export type ArtistData = z.infer<typeof ArtistDataSchema>;
 export type Library = z.infer<typeof LibrarySchema>;
 
 export type Status =
-    | { playing: true, song: Song }
+    | { playing: true, song: Song, queue: Song[] }
     | { playing: false }

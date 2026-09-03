@@ -1,6 +1,6 @@
 import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong } from "./library";
 import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema } from "../core/library"
-import { getStatus, play, stop } from "./player"
+import { getStatus, playSong, stop } from "./player"
 import { PORT } from "../core/config";
 import z from "zod"
 
@@ -29,7 +29,7 @@ export function serve(): void {
                         );
                     }
 
-                    const playResult = play(songResult.value);
+                    const playResult = playSong(songResult.value);
 
                     if (!playResult.success) {
                         return Response.json(

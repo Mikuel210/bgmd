@@ -9,6 +9,11 @@ bgmd is a music daemon that constantly matches music to your current mood. My go
 - **Playback:** Use it as a normal music player with every feature you would expect
 - **Mood-matching:** Set a current mood vector and the daemon constantly matches music to it
 
+## Prerequisites
+
+- yt-dlp
+- mpv
+
 ## Usage
 
 Manage playback:
@@ -20,10 +25,10 @@ Manage playback:
 
 Manage library:
 - bgmctl pull
-- bgmctl song <add|play|show|edit|remove>
-- bgmctl album
-- bgmctl artist
-- bgmctl capture
+- bgmctl song <list|add|show|edit|remove>
+- bgmctl album <list|show|edit|remove>
+- bgmctl artist <list|show|edit|remove>
+- bgmctl capture <song|album|artist>
 
 Manage mood: TODO
 - bgmctl mood show
