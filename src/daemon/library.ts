@@ -373,3 +373,36 @@ export async function editArtist(oldData: ArtistData, newData: ArtistData): Prom
         };
     });
 }
+
+export async function removeArtist(data: ArtistData): Promise<Result<Artist>> {
+    const artistsResult = await getArtists();
+
+    return withLibrary(async (library) => {
+        if (!artistsResult.success) return artistsResult;
+
+        // Find match
+        const match = artistsResult.value.find(e => e.name == data.name);
+
+        if (!match) {
+            return {
+                success: false,
+                error: "Artist not found"
+            };
+        }
+
+        // Delete songs
+        const albumSongs = match.albums.map(e => e.songs);
+        const ids = albumSongs.flat().map(e => e.id);
+        const songs = library.songs.filter(e => ids.includes(e.id));
+
+        for (const song of songs) {
+            const index = library.songs.indexOf(song);
+            library.songs.splice(index, 1);
+        }
+
+        return {
+            success: true,
+            value: match
+        };
+    });
+}

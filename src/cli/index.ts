@@ -5,7 +5,7 @@ import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
 import { play, root, status, stop } from "./commands/general";
 import { handle, registerCommand } from "./framework/handler"
 import { pull } from "./commands/pull";
-import { artistEdit, artistList, artistShow } from "./commands/artist";
+import { artistEdit, artistList, artistRemove, artistShow } from "./commands/artist";
 
 let args = Bun.argv.slice(2);
 
@@ -293,6 +293,20 @@ registerCommand({
         }
     ],
     run: artistEdit
+});
+
+registerCommand({
+    route: ["artist", "remove"],
+    description: "Remove an artist from the library",
+    args: [
+        {
+            name: "artist",
+            description: "The name of the artist to remove",
+            validate: validateArtist
+        }
+    ],
+    flags: [],
+    run: artistRemove
 })
 
 registerCommand({

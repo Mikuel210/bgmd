@@ -111,3 +111,11 @@ export async function put_libraryArtists(oldData: ArtistData, newData: ArtistDat
         headers: { "Content-type": "application/json" }
     });
 }
+
+export async function delete_libraryArtists(data: ArtistData): Promise<Result<Artist>> {
+    return fetchResult(DAEMON_URL + "library/artists", {
+        method: "DELETE",
+        body: JSON.stringify(data),
+        headers: { "Content-type": "application/json" }
+    });
+}

@@ -1,4 +1,4 @@
-import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeSong } from "./library";
+import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong } from "./library";
 import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema } from "../core/library"
 import { getStatus, play, stop } from "./player"
 import { PORT } from "../core/config";
@@ -245,7 +245,7 @@ export function serve(): void {
                         );
                     }
 
-                    // Update album
+                    // Update artist
                     const editResult = await editArtist(oldDataResult.data, newDataResult.data);
 
                     if (!editResult.success) {
@@ -256,6 +256,30 @@ export function serve(): void {
                     }
 
                     return Response.json(editResult.value, { status: 200 });
+                },
+
+                DELETE: async (request) => {
+                    const body = await request.json() as Record<string, any>;
+                    const dataResult = ArtistDataSchema.safeParse(body);
+
+                    if (!dataResult.success) {
+                        return Response.json(
+                            { error: "Invalid artist", issues: z.prettifyError(dataResult.error!) },
+                            { status: 400 }
+                        );
+                    }
+
+                    // Delete artist
+                    const deleteResult = await removeArtist(dataResult.data);
+
+                    if (!deleteResult.success) {
+                        return Response.json(
+                            { error: deleteResult.error },
+                            { status: 500 }
+                        );
+                    }
+
+                    return Response.json(deleteResult.value, { status: 200 });
                 }
             }
         }

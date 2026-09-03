@@ -1,7 +1,7 @@
 import type { Argument, Flag } from "../framework/command";
 import type { AlbumData, Artist, ArtistData } from "../../core/library";
 import { logObject, stringifyAlbum, stringifyArtist } from "../formatter";
-import { get_libraryArtists, put_libraryArtists } from "../connection";
+import { delete_libraryArtists, get_libraryArtists, put_libraryArtists } from "../connection";
 
 export async function artistList(args: Argument[], flags: Flag[]): Promise<number> {
     const result = await get_libraryArtists();
@@ -61,4 +61,17 @@ export async function artistEdit(args: Argument[], flags: Flag[]): Promise<numbe
         console.warn("No changes made");
 
     return 0;
+}
+
+export async function artistRemove(args: Argument[], flags: Flag[]): Promise<number> {
+    const artist = args[0]!.value as Artist;
+    const result = await delete_libraryArtists({ name: artist.name });
+
+    if (!result.success) {
+        console.error(`Failed to remove artist: ${result.error}`);
+        return 1;
+    }
+
+    console.log(`Artist removed: ${stringifyArtist(result.value)}`);
+    return 1;
 }
