@@ -1,4 +1,4 @@
-import type { Album, Artist, Song } from "../../core/library";
+import { AlbumSchema, ArtistSchema, SongSchema, type Album, type Artist, type Entity, type Song } from "../../core/library";
 import type { Result } from "../../core/task";
 import { get_libraryAlbums, get_libraryArtists, get_librarySongs, get_librarySongsId } from "../connection";
 import { fuzzySearch, promptOptions, stringifyAlbum, stringifyArtist, stringifySong } from "../formatter";
@@ -49,6 +49,51 @@ export async function validatePositiveInteger(input: string): Promise<Result<num
         success: true,
         value: number
     };
+}
+
+export async function validateEntity(input: string): Promise<Result<Entity>> {
+    const artistsResult = await get_libraryArtists();
+
+    if (!artistsResult.success) {
+        return {
+            success: false,
+            error: `Failed to fetch artists: ${artistsResult.error}`
+        };
+    }
+
+    // Search for query
+    const artists = artistsResult.value;
+    const albums = artists.map(e => e.albums).flat();
+    const songs = albums.map(e => e.songs).flat();
+
+    const entities: Entity[] = [
+        songs.map((e): Entity => { return { type: "song", name: e.name, value: e } }),
+        albums.map((e): Entity => { return { type: "album", name: e.name, value: e } }),
+        artists.map((e): Entity => { return { type: "artist", name: e.name, value: e } })
+    ].flat();
+
+    const searchOptions = fuzzySearch(entities, ['name', 'album', 'artist'], input, 5);
+
+    const matchResult = await promptOptions<Entity>(
+        searchOptions,
+        input,
+        (entity) => {
+            if (entity.type == "song")
+                return stringifySong(entity.value)
+            else if (entity.type == "album")
+                return stringifyAlbum(entity.value);
+            else
+                return stringifyArtist(entity.value);
+        },
+        "an item"
+    );
+
+    if (!matchResult.success) return matchResult;
+
+    return {
+        success: true,
+        value: matchResult.value
+    }
 }
 
 // Songs

@@ -1,4 +1,4 @@
-import type { Album, AlbumData, Artist, ArtistData, Library, Song, SongData, Status } from "../core/library";
+import type { Album, AlbumData, Artist, ArtistData, Entity, Song, SongData, Status } from "../core/library";
 import type { Result } from "../core/task";
 import { PORT } from "../core/config";
 
@@ -33,10 +33,10 @@ export async function get_playback(): Promise<Result<Status>> {
     return await fetchResult(DAEMON_URL + "playback");
 }
 
-export async function post_playback(id: string): Promise<Result<Status>> {
+export async function post_playback(entity: Entity): Promise<Result<Status>> {
     return await fetchResult(DAEMON_URL + "playback", {
         method: "POST",
-        body: JSON.stringify({ id }),
+        body: JSON.stringify(entity),
         headers: { "Content-Type": "application/json" }
     });
 }

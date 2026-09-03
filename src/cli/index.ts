@@ -1,4 +1,4 @@
-import { validateAlbum, validateArtist, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateYouTubeSource } from "./framework/validate";
+import { validateAlbum, validateArtist, validateEntity, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateYouTubeSource } from "./framework/validate";
 import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
 import { albumEdit, albumList, albumRemove, albumShow } from "./commands/album";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
@@ -27,12 +27,12 @@ registerCommand({
 
 registerCommand({
     route: ["play"],
-    description: "Play a song",
+    description: "Play a song, album or artist",
     args: [
         {
-            name: "song",
-            description: "The name or ID of the song to play",
-            validate: validateSong
+            name: "query",
+            description: "The name or ID of the item to play",
+            validate: validateEntity
         }
     ],
     flags: [],

@@ -62,3 +62,8 @@ export type Library = z.infer<typeof LibrarySchema>;
 export type Status =
     | { playing: true, song: Song, queue: Song[] }
     | { playing: false }
+
+export type Entity =
+    | { type: "song", name: string, value: Song }
+    | { type: "album", name: string, value: Album }
+    | { type: "artist", name: string, value: Artist }

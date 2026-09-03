@@ -1,4 +1,4 @@
-import type { Song, Status } from "../core/library";
+import type { Album, Artist, Song, Status } from "../core/library";
 import type { Result } from "../core/task";
 
 let status: Status = { playing: false };
@@ -13,6 +13,40 @@ export function playSong(song: Song): Result<Status> {
         playing: true,
         song: song,
         queue: []
+    };
+
+    const result = play();
+    if (!result.success) return result;
+
+    return {
+        success: true,
+        value: status
+    };
+}
+
+export function playAlbum(album: Album): Result<Status> {
+    status = {
+        playing: true,
+        song: album.songs[0]!,
+        queue: album.songs.slice(1)
+    };
+
+    const result = play();
+    if (!result.success) return result;
+
+    return {
+        success: true,
+        value: status
+    };
+}
+
+export function playArtist(artist: Artist): Result<Status> {
+    const songs = artist.albums.map(e => e.songs).flat();
+
+    status = {
+        playing: true,
+        song: songs[0]!,
+        queue: songs.slice(1)
     };
 
     const result = play();
@@ -58,7 +92,8 @@ export function play(): Result<Status> {
     }
 
     process = Bun.spawn(command, {
-        onExit() {
+        onExit(_, exitCode) {
+            if (exitCode == 4) return;
             if (!status.playing) return;
 
             if (status.queue.length == 0) {

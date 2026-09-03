@@ -18,7 +18,8 @@ bgmd is a music daemon that constantly matches music to your current mood. My go
 
 Manage playback:
 - bgmctl status
-- bgmctl play
+- bgmctl play 
+- bgmctl skip TODO
 - bgmctl pause TODO
 - bgmctl resume TODO
 - bgmctl stop

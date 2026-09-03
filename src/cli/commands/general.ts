@@ -1,7 +1,7 @@
 import type { Argument, Flag } from "../framework/command";
-import type { Song, Status } from "../../core/library";
+import { type Entity  } from "../../core/library";
 import { post_playback, get_playback, delete_playback } from "../connection";
-import { stringifySong } from "../formatter";
+import { stringifyStatus } from "../formatter";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("usage: bgmctl <command> [<args>]");
@@ -10,15 +10,15 @@ export async function root(args: Argument[], flags: Flag[]): Promise<number> {
 }
 
 export async function play(args: Argument[], flags: Flag[]): Promise<number> {
-    const song = args[0]!.value as Song;
-    const result = await post_playback(song.id);
+    const entity = args[0]!.value as Entity;
+    let result = await post_playback(entity);
 
     if (!result.success) {
-        console.error(`Failed to play song: ${result.error}`);
+        console.error(`Failed to play ${entity.type}: ${result.error}`);
         return 1;
     }
 
-    printStatus(result.value);
+    stringifyStatus(result.value);
     return 0;
 }
 
@@ -34,14 +34,7 @@ export async function stop(args: Argument[], flags: Flag[]): Promise<number> {
     return 0;
 }
 
-function printStatus(status: Status): void {
-    if (status.playing) {
-        console.log(`Now playing: ${stringifySong(status.song)}`);
-        return;
-    }
 
-    console.log("Nothing playing");
-}
 
 export async function status(): Promise<number> {
     const result = await get_playback();
@@ -51,6 +44,6 @@ export async function status(): Promise<number> {
         return 1;
     }
 
-    printStatus(result.value);
+    stringifyStatus(result.value);
     return 0;
 }

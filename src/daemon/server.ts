@@ -1,6 +1,7 @@
 import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong } from "./library";
-import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema } from "../core/library"
-import { getStatus, playSong, stop } from "./player"
+import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema, type Entity, type Status } from "../core/library"
+import type { Result } from "../core/task";
+import { getStatus, playAlbum, playArtist, playSong, stop } from "./player"
 import { PORT } from "../core/config";
 import z from "zod"
 
@@ -16,20 +17,15 @@ export function serve(): void {
                 GET: async () => Response.json(getStatus(), { status: 200 }),
 
                 POST: async (request) => {
-                    const body = await request.json() as Record<string, any>;
-                    const id = body.id;
+                    const entity = await request.json() as Entity;
+                    let playResult: Result<Status>;
 
-                    // Play song
-                    const songResult = await getSong(id);
-
-                    if (!songResult.success) {
-                        return Response.json(
-                            { error: songResult.error },
-                            { status: 500 }
-                        );
-                    }
-
-                    const playResult = playSong(songResult.value);
+                    if (entity.type == "song")
+                        playResult = playSong(entity.value);
+                    else if (entity.type == "album")
+                        playResult = playAlbum(entity.value);
+                    else
+                        playResult = playArtist(entity.value);
 
                     if (!playResult.success) {
                         return Response.json(

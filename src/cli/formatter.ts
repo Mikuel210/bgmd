@@ -1,4 +1,4 @@
-import type { Album, Artist, Song } from "../core/library";
+import type { Album, Artist, Song, Status } from "../core/library";
 import type { Result } from "../core/task";
 import { validatePositiveInteger } from "./framework/validate";
 import { styleText } from "node:util";
@@ -22,6 +22,26 @@ export function logObject(object: Record<string, any>, indented: boolean = false
         else
             console.log(`${styleText(DARK_TEAL, key)}${space}${value}`);
     }
+}
+
+export function stringifyStatus(status: Status): void {
+    if (!status.playing) {
+        console.log("Nothing playing");
+        return;
+    }
+
+    console.log(`Now playing: ${stringifySong(status.song)}`);
+    if (status.queue.length == 0) return;
+
+    console.log("\nQueue:");
+
+    for (let i = 0; i < Math.min(status.queue.length, 20); i++) {
+        const song = status.queue[i]!;
+        console.log(`  [${i + 1}] ${song.trackNumber}. ${stringifySong(song)}`)
+    }
+
+    if (status.queue.length > 20)
+        console.log("  (...)");
 }
 
 export function stringifySong(song: Song, colors: boolean = true): string {
