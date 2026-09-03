@@ -54,6 +54,20 @@ export async function validatePositiveInteger(input: string): Promise<Result<num
 }
 
 export async function validateEntity(input: string): Promise<Result<Entity>> {
+    const songResult = await get_librarySongsId(input);
+
+    if (songResult.success) {
+        return {
+            success: true,
+            value: {
+                type: "song",
+                name: songResult.value.name,
+                value: songResult.value
+            }
+        };
+    }
+
+    // Fetch all entities
     const artistsResult = await get_libraryArtists();
 
     if (!artistsResult.success) {
