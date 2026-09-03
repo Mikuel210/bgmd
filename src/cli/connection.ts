@@ -1,4 +1,4 @@
-import type { Album, AlbumData, Artist, Library, Song, SongData, Status } from "../core/library";
+import type { Album, AlbumData, Artist, ArtistData, Library, Song, SongData, Status } from "../core/library";
 import type { Result } from "../core/task";
 import { PORT } from "../core/config";
 
@@ -28,6 +28,7 @@ export async function fetchResult<T>(url: string, options: RequestInit = {}): Pr
     }
 }
 
+// Playback
 export async function get_playback(): Promise<Result<Status>> {
     return await fetchResult(DAEMON_URL + "playback");
 }
@@ -46,6 +47,7 @@ export async function delete_playback(): Promise<Result<Status>> {
     });
 }
 
+// Songs
 export async function get_librarySongs(): Promise<Result<Song[]>> {
     return await fetchResult(DAEMON_URL + "library/songs");
 }
@@ -76,6 +78,7 @@ export async function delete_librarySongsId(id: string): Promise<Result<Song>> {
     });
 }
 
+// Albums
 export async function get_libraryAlbums(): Promise<Result<Album[]>> {
     return await fetchResult(DAEMON_URL + "library/albums");
 }
@@ -96,6 +99,15 @@ export async function delete_libraryAlbums(data: AlbumData): Promise<Result<Albu
     });
 }
 
+// Artists
 export async function get_libraryArtists(): Promise<Result<Artist[]>> {
     return await fetchResult(DAEMON_URL + "library/artists");
+}
+
+export async function put_libraryArtists(oldData: ArtistData, newData: ArtistData): Promise<Result<Artist>> {
+    return await fetchResult(DAEMON_URL + "library/artists", {
+        method: "PUT",
+        body: JSON.stringify({ oldData, newData }),
+        headers: { "Content-type": "application/json" }
+    });
 }

@@ -1,5 +1,5 @@
-import { addSong, editAlbum, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeSong } from "./library";
-import { AlbumDataSchema, SongDataSchema, SongSchema } from "../core/library"
+import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeSong } from "./library";
+import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema } from "../core/library"
 import { getStatus, play, stop } from "./player"
 import { PORT } from "../core/config";
 import z from "zod"
@@ -224,6 +224,38 @@ export function serve(): void {
                     }
 
                     return Response.json(result.value, { status: 200 });
+                },
+
+                PUT: async (request) => {
+                    const body = await request.json() as Record<string, any>;
+                    const oldDataResult = ArtistDataSchema.safeParse(body.oldData);
+                    const newDataResult = ArtistDataSchema.safeParse(body.newData);
+
+                    if (!oldDataResult.success) {
+                        return Response.json(
+                            { error: "Invalid artist", issues: z.prettifyError(oldDataResult.error!) },
+                            { status: 400 }
+                        );
+                    }
+
+                    if (!newDataResult.success) {
+                        return Response.json(
+                            { error: "Invalid artist", issues: z.prettifyError(newDataResult.error!) },
+                            { status: 400 }
+                        );
+                    }
+
+                    // Update album
+                    const editResult = await editArtist(oldDataResult.data, newDataResult.data);
+
+                    if (!editResult.success) {
+                        return Response.json(
+                            { error: editResult.error },
+                            { status: 500 }
+                        );
+                    }
+
+                    return Response.json(editResult.value, { status: 200 });
                 }
             }
         }

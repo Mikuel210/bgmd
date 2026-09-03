@@ -1,4 +1,4 @@
-import { LibrarySchema, type Album, type AlbumData, type Artist, type Library, type Song, type SongData } from "../core/library";
+import { LibrarySchema, type Album, type AlbumData, type Artist, type ArtistData, type Library, type Song, type SongData } from "../core/library";
 import type { Result } from "../core/task";
 import { load, save } from "../core/store";
 
@@ -314,4 +314,62 @@ export async function getArtists(): Promise<Result<Artist[]>> {
         success: true,
         value: artists
     };
+}
+
+export async function editArtist(oldData: ArtistData, newData: ArtistData): Promise<Result<Artist>> {
+    const artistsResult = await getArtists();
+
+    return withLibrary(async (library) => {
+        if (!artistsResult.success) return artistsResult;
+
+        // Find match
+        const match = artistsResult.value.find(e => e.name == oldData.name);
+
+        if (!match) {
+            return {
+                success: false,
+                error: "Artist not found"
+            };
+        }
+
+        if (oldData.name == newData.name) {
+            return {
+                success: true,
+                value: match
+            };
+        }
+
+        // Find collision
+        const collision = artistsResult.value.find(e => e.name == newData.name);
+
+        if (collision) {
+            return {
+                success: false,
+                error: "An artist with the same name already exists"
+            };
+        }
+
+        // Edit albums
+        const albums = match.albums;
+
+        for (const album of albums) {
+            album.artist = newData.name;
+
+            for (const song of album.songs)
+                song.artist = newData.name;
+        }
+
+        // Edit songs
+        const albumSongs = match.albums.map(e => e.songs);
+        const ids = albumSongs.flat().map(e => e.id);
+        const songs = library.songs.filter(e => ids.includes(e.id));
+
+        for (const song of songs)
+            song.artist = newData.name;
+
+        return {
+            success: true,
+            value: { ...newData, albums }
+        };
+    });
 }

@@ -1,7 +1,7 @@
 import type { Argument, Flag } from "../framework/command";
-import type { Artist } from "../../core/library";
+import type { AlbumData, Artist, ArtistData } from "../../core/library";
 import { logObject, stringifyAlbum, stringifyArtist } from "../formatter";
-import { get_libraryArtists } from "../connection";
+import { get_libraryArtists, put_libraryArtists } from "../connection";
 
 export async function artistList(args: Argument[], flags: Flag[]): Promise<number> {
     const result = await get_libraryArtists();
@@ -28,6 +28,37 @@ export async function artistShow(args: Argument[], flags: Flag[]): Promise<numbe
 
     for (const album of artist.albums)
         console.log(`  ${stringifyAlbum(album)}`);
+
+    return 0;
+}
+
+export async function artistEdit(args: Argument[], flags: Flag[]): Promise<number> {
+    const artist = args[0]!.value as Artist;
+    let changesMade = false;
+
+    const oldData: ArtistData = { name: artist.name };
+    const newData: ArtistData = structuredClone(oldData);
+
+    for (const flag of flags) {
+        switch (flag.longName) {
+            case "name": newData.name = flag.value as string; break;
+        }
+
+        changesMade = true;
+    }
+
+    // Update album
+    const result = await put_libraryArtists(oldData, newData);
+
+    if (!result.success) {
+        console.error(`Failed to edit artist: ${result.error}`);
+        return 1;
+    }
+
+    if (changesMade)
+        console.log(`Artist updated: ${stringifyArtist(result.value)}`);
+    else
+        console.warn("No changes made");
 
     return 0;
 }
