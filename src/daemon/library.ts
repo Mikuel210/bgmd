@@ -1,4 +1,4 @@
-import { LibrarySchema, type Album, type AlbumData, type Library, type Song, type SongData } from "../core/library";
+import { LibrarySchema, type Album, type AlbumData, type Artist, type Library, type Song, type SongData } from "../core/library";
 import type { Result } from "../core/task";
 import { load, save } from "../core/store";
 
@@ -40,16 +40,16 @@ function withLibrary<T>(predicate: (library: Library) => Promise<Result<T>>): Pr
     return next;
 }
 
-export function getLibrary(): Promise<Result<Library>> {
+// Song management
+export function getSongs(): Promise<Result<Song[]>> {
     return withLibrary(async (library) => {
         return {
             success: true,
-            value: library
+            value: library.songs
         }
     });
 }
 
-// Song management
 export function getSong(id: string): Promise<Result<Song>> {
     return withLibrary(async (library) => {
         const song = library.songs.find(e => e.id == id);
@@ -186,17 +186,16 @@ export function getAlbums(): Promise<Result<Album[]>> {
         for (const song of library.songs) {
             const album = albums.find(e => e.name == song.album && e.artist == song.artist);
 
-            if (!album) {
-                albums.push({
-                    name: song.album,
-                    artist: song.artist,
-                    songs: [song]
-                });
-
+            if (album) {
+                album.songs.push(song);
                 continue;
             }
 
-            album.songs.push(song);
+            albums.push({
+                name: song.album,
+                artist: song.artist,
+                songs: [song]
+            });
         }
 
         for (const album of albums)
@@ -288,4 +287,31 @@ export async function removeAlbum(data: AlbumData): Promise<Result<Album>> {
             value: match
         };
     });
+}
+
+// Artist management
+export async function getArtists(): Promise<Result<Artist[]>> {
+    const albumsResult = await getAlbums();
+    if (!albumsResult.success) return albumsResult;
+
+    const artists: Artist[] = [];
+
+    for (const album of albumsResult.value) {
+        const artist = artists.find(e => e.name == album.artist);
+
+        if (artist) {
+            artist.albums.push(album);
+            continue;
+        }
+
+        artists.push({
+            name: album.artist,
+            albums: [album]
+        });
+    }
+
+    return {
+        success: true,
+        value: artists
+    };
 }

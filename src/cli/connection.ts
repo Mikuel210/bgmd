@@ -1,4 +1,4 @@
-import type { Album, AlbumData, Library, Song, SongData, Status } from "../core/library";
+import type { Album, AlbumData, Artist, Library, Song, SongData, Status } from "../core/library";
 import type { Result } from "../core/task";
 import { PORT } from "../core/config";
 
@@ -94,4 +94,8 @@ export async function delete_libraryAlbums(data: AlbumData): Promise<Result<Albu
         body: JSON.stringify(data),
         headers: { "Content-type": "application/json" }
     });
+}
+
+export async function get_libraryArtists(): Promise<Result<Artist[]>> {
+    return await fetchResult(DAEMON_URL + "library/artists");
 }

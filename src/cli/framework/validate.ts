@@ -1,11 +1,12 @@
-import type { Album, Song } from "../../core/library";
+import type { Album, Artist, Song } from "../../core/library";
 import type { Result } from "../../core/task";
-import { get_libraryAlbums, get_librarySongs, get_librarySongsId } from "../connection";
-import { fuzzySearch, promptOptions, stringifyAlbum, stringifySong } from "../formatter";
+import { get_libraryAlbums, get_libraryArtists, get_librarySongs, get_librarySongsId } from "../connection";
+import { fuzzySearch, promptOptions, stringifyAlbum, stringifyArtist, stringifySong } from "../formatter";
 
 const HTTP_PREFIXES = ["https://www.", "https://", "http://www.", "http://"];
 const YOUTUBE_PREFIXES = ["youtube.com/watch?v=", "youtu.be/"];
 
+// General
 export async function validateString(input: string): Promise<Result<string>> {
     return {
         success: true,
@@ -13,6 +14,44 @@ export async function validateString(input: string): Promise<Result<string>> {
     };
 }
 
+export async function validatePositiveInteger(input: string): Promise<Result<number>> {
+    if (input.trim() === '') {
+        return {
+            success: false,
+            error: "Value can't be empty"
+        };
+    }
+
+    const number = Number(input);
+
+    if (Number.isNaN(number)) {
+        return {
+            success: false,
+            error: "Value must be a number"
+        };
+    }
+
+    if (!Number.isInteger(number)) {
+        return {
+            success: false,
+            error: "Value must be an integer"
+        }
+    }
+
+    if (number <= 0) {
+        return {
+            success: false,
+            error: "Value must be greater than 0"
+        };
+    }
+
+    return {
+        success: true,
+        value: number
+    };
+}
+
+// Songs
 export async function validateSong(input: string): Promise<Result<Song>> {
     const songResult = await get_librarySongsId(input);
     if (songResult.success) return songResult;
@@ -34,34 +73,6 @@ export async function validateSong(input: string): Promise<Result<Song>> {
         input,
         stringifySong,
         "a song"
-    );
-
-    if (!matchResult.success) return matchResult;
-
-    return {
-        success: true,
-        value: matchResult.value
-    }
-}
-
-export async function validateAlbum(input: string): Promise<Result<Album>> {
-    const albumsResult = await get_libraryAlbums();
-
-    if (!albumsResult.success) {
-        return {
-            success: false,
-            error: `Failed to fetch albums: ${albumsResult.error}`
-        };
-    }
-
-    // Search for query
-    const searchOptions = fuzzySearch(albumsResult.value, ['name', 'artist'], input, 5);
-
-    const matchResult = await promptOptions(
-        searchOptions,
-        input,
-        stringifyAlbum,
-        "an album"
     );
 
     if (!matchResult.success) return matchResult;
@@ -141,39 +152,60 @@ export async function validateYouTubeSource(input: string): Promise<Result<strin
     };
 }
 
-export async function validatePositiveInteger(input: string): Promise<Result<number>> {
-    if (input.trim() === '') {
+// Albums
+export async function validateAlbum(input: string): Promise<Result<Album>> {
+    const albumsResult = await get_libraryAlbums();
+
+    if (!albumsResult.success) {
         return {
             success: false,
-            error: "Value can't be empty"
+            error: `Failed to fetch albums: ${albumsResult.error}`
         };
     }
 
-    const number = Number(input);
+    // Search for query
+    const searchOptions = fuzzySearch(albumsResult.value, ['name', 'artist'], input, 5);
 
-    if (Number.isNaN(number)) {
-        return {
-            success: false,
-            error: "Value must be a number"
-        };
-    }
+    const matchResult = await promptOptions(
+        searchOptions,
+        input,
+        stringifyAlbum,
+        "an album"
+    );
 
-    if (!Number.isInteger(number)) {
-        return {
-            success: false,
-            error: "Value must be an integer"
-        }
-    }
-
-    if (number <= 0) {
-        return {
-            success: false,
-            error: "Value must be greater than 0"
-        };
-    }
+    if (!matchResult.success) return matchResult;
 
     return {
         success: true,
-        value: number
-    };
+        value: matchResult.value
+    }
+}
+
+// Artists
+export async function validateArtist(input: string): Promise<Result<Artist>> {
+    const artistsResult = await get_libraryArtists();
+
+    if (!artistsResult.success) {
+        return {
+            success: false,
+            error: `Failed to fetch artists: ${artistsResult.error}`
+        };
+    }
+
+    // Search for query
+    const searchOptions = fuzzySearch(artistsResult.value, ['name'], input, 5);
+
+    const matchResult = await promptOptions(
+        searchOptions,
+        input,
+        stringifyArtist,
+        "an artist"
+    );
+
+    if (!matchResult.success) return matchResult;
+
+    return {
+        success: true,
+        value: matchResult.value
+    }
 }

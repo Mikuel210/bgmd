@@ -1,4 +1,4 @@
-import type { Album, Song } from "../core/library";
+import type { Album, Artist, Song } from "../core/library";
 import type { Result } from "../core/task";
 import { validatePositiveInteger } from "./framework/validate";
 import { styleText } from "node:util";
@@ -33,6 +33,11 @@ export function stringifySong(song: Song, colors: boolean = true): string {
 export function stringifyAlbum(album: Album): string {
     const tracks = `${album.songs.length} track${album.songs.length == 1 ? '' : 's'}`;
     return `${album.artist} - ${album.name} ${styleText(DARK_GREY, `(${tracks})`)}`;
+}
+
+export function stringifyArtist(artist: Artist): string {
+    const albums = `${artist.albums.length} album${artist.albums.length == 1 ? '' : 's'}`;
+    return `${artist.name} ${styleText(DARK_GREY, `(${albums})`)}`;
 }
 
 // Prompt options
