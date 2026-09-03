@@ -1,48 +1,23 @@
-import type { Album, Artist, Song, Status } from "../core/library";
+import type { Entity, Song, Status } from "../core/library";
 import type { Result } from "../core/task";
 
 let status: Status = { playing: false };
 let process: Bun.Subprocess | null = null;
 
-export function getStatus(): Status {
-    return status;
+export const getStatus = () => status;
+
+export function songsFromEntity(entity: Entity): Song[] {
+    switch (entity.type) {
+        case "song":
+            return [entity.value];
+        case "album":
+            return entity.value.songs;
+        case "artist":
+            return entity.value.albums.map(e => e.songs).flat();
+    }
 }
 
-export function playSong(song: Song): Result<Status> {
-    status = {
-        playing: true,
-        song: song,
-        queue: []
-    };
-
-    const result = play();
-    if (!result.success) return result;
-
-    return {
-        success: true,
-        value: status
-    };
-}
-
-export function playAlbum(album: Album): Result<Status> {
-    status = {
-        playing: true,
-        song: album.songs[0]!,
-        queue: album.songs.slice(1)
-    };
-
-    const result = play();
-    if (!result.success) return result;
-
-    return {
-        success: true,
-        value: status
-    };
-}
-
-export function playArtist(artist: Artist): Result<Status> {
-    const songs = artist.albums.map(e => e.songs).flat();
-
+export function playReplace(songs: Song[]): Result<Status> {
     status = {
         playing: true,
         song: songs[0]!,
@@ -58,7 +33,37 @@ export function playArtist(artist: Artist): Result<Status> {
     };
 }
 
-export function play(): Result<Status> {
+export function playNext(songs: Song[]): Result<Status> {
+    if (!status.playing) return playReplace(songs);
+
+    status = {
+        playing: true,
+        song: status.song,
+        queue: songs.concat(status.queue)
+    };
+
+    return {
+        success: true,
+        value: status
+    };
+}
+
+export function playLast(songs: Song[]): Result<Status> {
+    if (!status.playing) return playReplace(songs);
+
+    status = {
+        playing: true,
+        song: status.song,
+        queue: status.queue.concat(songs)
+    };
+
+    return {
+        success: true,
+        value: status
+    };
+}
+
+function play(): Result<Status> {
     if (process) process.kill();
 
     if (!status.playing) {

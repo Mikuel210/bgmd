@@ -67,3 +67,8 @@ export type Entity =
     | { type: "song", name: string, value: Song }
     | { type: "album", name: string, value: Album }
     | { type: "artist", name: string, value: Artist }
+
+export interface PlaybackRequest {
+    method: "replace" | "next" | "last",
+    entity: Entity
+}

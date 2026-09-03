@@ -11,6 +11,7 @@ export interface Flag {
     longName: string,
     shortName?: string,
     description: string,
+    switch: boolean,
     validate: (input: string) => Promise<Result<any>>,
     value?: any
 }

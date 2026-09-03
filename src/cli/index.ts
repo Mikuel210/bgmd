@@ -1,4 +1,4 @@
-import { validateAlbum, validateArtist, validateEntity, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateYouTubeSource } from "./framework/validate";
+import { validateAlbum, validateArtist, validateEntity, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateSwitch, validateYouTubeSource } from "./framework/validate";
 import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
 import { albumEdit, albumList, albumRemove, albumShow } from "./commands/album";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
@@ -35,7 +35,22 @@ registerCommand({
             validate: validateEntity
         }
     ],
-    flags: [],
+    flags: [
+        {
+            longName: "next",
+            shortName: 'n',
+            description: "Add the item to the queue next",
+            switch: true,
+            validate: validateSwitch
+        },
+        {
+            longName: "last",
+            shortName: 'l',
+            description: "Add the item to the end of the queue",
+            switch: true,
+            validate: validateSwitch
+        }
+    ],
     run: play
 });
 
@@ -80,24 +95,28 @@ registerCommand({
             longName: "disc-number",
             shortName: 'd',
             description: "Set the disc number for the song (default 1)",
+            switch: false,
             validate: validatePositiveInteger
         },
         {
             longName: "track-number",
             shortName: 't',
             description: "Set the track number for the song (default next empty in disc)",
+            switch: false,
             validate: validatePositiveInteger
         },
         {
             longName: "youtube-source",
             shortName: 'y',
             description: "Add a YouTube source for the song",
+            switch: false,
             validate: validateYouTubeSource
         },
         {
             longName: "local-source",
             shortName: 'l',
             description: "Add a local source for the song",
+            switch: false,
             validate: validateLocalSource
         }
     ],
@@ -133,42 +152,49 @@ registerCommand({
             longName: "name",
             shortName: 'n',
             description: "Change the name of the song",
+            switch: false,
             validate: validateString
         },
         {
             longName: "album",
             shortName: 'a',
             description: "Change the album of the song",
+            switch: false,
             validate: validateString
         },
         {
             longName: "artist",
             shortName: 'x',
             description: "Change the artist of the song",
+            switch: false,
             validate: validateString
         },
         {
             longName: "disc-number",
             shortName: 'd',
             description: "Change the disc number for the song",
+            switch: false,
             validate: validatePositiveInteger
         },
         {
             longName: "track-number",
             shortName: 't',
             description: "Change the track number for the song",
+            switch: false,
             validate: validatePositiveInteger
         },
         {
             longName: "youtube-source",
             shortName: 'y',
             description: "Change the YouTube source of the song",
+            switch: false,
             validate: validateYouTubeSource
         },
         {
             longName: "local-source",
             shortName: 'l',
             description: "Change the local source of the song",
+            switch: false,
             validate: validateLocalSource
         }
     ],
@@ -226,12 +252,14 @@ registerCommand({
             longName: "name",
             shortName: 'n',
             description: "Change the name of the album",
+            switch: false,
             validate: validateString
         },
         {
             longName: "artist",
             shortName: 'a',
             description: "Change the artist of the album",
+            switch: false,
             validate: validateString
         }
     ],
@@ -289,6 +317,7 @@ registerCommand({
             longName: "name",
             shortName: 'n',
             description: "Change the name of the artist",
+            switch: false,
             validate: validateString
         }
     ],

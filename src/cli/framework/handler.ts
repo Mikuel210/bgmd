@@ -64,6 +64,11 @@ async function handle(args: string[]): Promise<number> {
             if (flagArg != `--${flag.longName}` && flagArg != `-${flag.shortName}`)
                 continue;
 
+            if (flag.switch) {
+                validatedFlags.push(flag);
+                continue argLoop;
+            }
+
             // Validate value
             i++;
             const input = flagArgs[i];

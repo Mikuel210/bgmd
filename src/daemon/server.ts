@@ -1,7 +1,7 @@
-import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong } from "./library";
-import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema, type Entity, type Status } from "../core/library"
+import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema, type PlaybackRequest, type Status } from "../core/library"
 import type { Result } from "../core/task";
-import { getStatus, playAlbum, playArtist, playSong, stop } from "./player"
+import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong } from "./library";
+import { getStatus, playLast, playNext, playReplace, songsFromEntity, stop } from "./player"
 import { PORT } from "../core/config";
 import z from "zod"
 
@@ -17,15 +17,21 @@ export function serve(): void {
                 GET: async () => Response.json(getStatus(), { status: 200 }),
 
                 POST: async (request) => {
-                    const entity = await request.json() as Entity;
+                    const playbackRequest = await request.json() as PlaybackRequest;
+                    const songs = songsFromEntity(playbackRequest.entity);
                     let playResult: Result<Status>;
 
-                    if (entity.type == "song")
-                        playResult = playSong(entity.value);
-                    else if (entity.type == "album")
-                        playResult = playAlbum(entity.value);
-                    else
-                        playResult = playArtist(entity.value);
+                    switch (playbackRequest.method) {
+                        case "replace":
+                            playResult = playReplace(songs);
+                            break;
+                        case "next":
+                            playResult = playNext(songs);
+                            break;
+                        case "last":
+                            playResult = playLast(songs);
+                            break;
+                    }
 
                     if (!playResult.success) {
                         return Response.json(

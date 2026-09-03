@@ -1,4 +1,4 @@
-import { AlbumSchema, ArtistSchema, SongSchema, type Album, type Artist, type Entity, type Song } from "../../core/library";
+import { type Album, type Artist, type Entity, type Song } from "../../core/library";
 import type { Result } from "../../core/task";
 import { get_libraryAlbums, get_libraryArtists, get_librarySongs, get_librarySongsId } from "../connection";
 import { fuzzySearch, promptOptions, stringifyAlbum, stringifyArtist, stringifySong } from "../formatter";
@@ -7,6 +7,8 @@ const HTTP_PREFIXES = ["https://www.", "https://", "http://www.", "http://"];
 const YOUTUBE_PREFIXES = ["youtube.com/watch?v=", "youtu.be/"];
 
 // General
+export const validateSwitch = (_: string): Promise<Result> => Promise.resolve({ success: true, value: undefined });
+
 export async function validateString(input: string): Promise<Result<string>> {
     return {
         success: true,
