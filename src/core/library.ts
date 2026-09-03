@@ -64,9 +64,9 @@ export type Status =
     | { playing: false }
 
 export type Entity =
-    | { type: "song", name: string, value: Song }
-    | { type: "album", name: string, value: Album }
-    | { type: "artist", name: string, value: Artist }
+    | { type: "song", value: Song }
+    | { type: "album", value: Album }
+    | { type: "artist", value: Artist }
 
 export interface PlaybackRequest {
     method: "replace" | "next" | "last",

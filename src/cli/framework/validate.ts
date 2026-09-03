@@ -53,6 +53,10 @@ export async function validatePositiveInteger(input: string): Promise<Result<num
     };
 }
 
+type EntitySearch = Entity & {
+    name: string
+};
+
 export async function validateEntity(input: string): Promise<Result<Entity>> {
     const songResult = await get_librarySongsId(input);
 
@@ -61,7 +65,6 @@ export async function validateEntity(input: string): Promise<Result<Entity>> {
             success: true,
             value: {
                 type: "song",
-                name: songResult.value.name,
                 value: songResult.value
             }
         };
@@ -82,25 +85,18 @@ export async function validateEntity(input: string): Promise<Result<Entity>> {
     const albums = artists.map(e => e.albums).flat();
     const songs = albums.map(e => e.songs).flat();
 
-    const entities: Entity[] = [
-        songs.map((e): Entity => { return { type: "song", name: e.name, value: e } }),
-        albums.map((e): Entity => { return { type: "album", name: e.name, value: e } }),
-        artists.map((e): Entity => { return { type: "artist", name: e.name, value: e } })
+    const entities: EntitySearch[] = [
+        songs.map((e): EntitySearch => { return { type: "song", name: stringifySong(e), value: e } }),
+        albums.map((e): EntitySearch => { return { type: "album", name: stringifyAlbum(e), value: e } }),
+        artists.map((e): EntitySearch => { return { type: "artist", name: stringifyArtist(e), value: e } })
     ].flat();
 
-    const searchOptions = fuzzySearch(entities, ['name', 'album', 'artist'], input, 5);
+    const searchOptions = fuzzySearch(entities, ['name'], input, 5);
 
-    const matchResult = await promptOptions<Entity>(
+    const matchResult = await promptOptions<EntitySearch>(
         searchOptions,
         input,
-        (entity) => {
-            if (entity.type == "song")
-                return stringifySong(entity.value)
-            else if (entity.type == "album")
-                return stringifyAlbum(entity.value);
-            else
-                return stringifyArtist(entity.value);
-        },
+        (e) => e.name,
         "an item"
     );
 
