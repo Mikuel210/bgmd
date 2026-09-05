@@ -1,6 +1,6 @@
 # bgmd - The background music daemon
 
-bgmd is a music daemon that constantly matches music to your current mood. My goal is to make the coolest music system ever to feel like you're living in a movie. It covers music discovery, capture, download, playing and mood matching.
+bgmd is a music daemon that constantly matches music to your current mood. My goal is to make the coolest music system ever to feel like you're living in a movie. It covers music discovery, capture, download, playback and mood-matching.
 
 ## Features
 

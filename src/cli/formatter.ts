@@ -1,6 +1,7 @@
 import type { Album, Artist, Song, Status } from "../core/library";
 import type { Result } from "../core/task";
 import { validatePositiveInteger } from "./framework/validate";
+import { MAX_QUEUE_ITEMS } from "../core/config";
 import { styleText } from "node:util";
 import spinners from "unicode-animations";
 import Fuse from "fuse.js";
@@ -35,12 +36,12 @@ export function stringifyStatus(status: Status): void {
 
     console.log("\nQueue:");
 
-    for (let i = 0; i < Math.min(status.queue.length, 20); i++) {
+    for (let i = 0; i < Math.min(status.queue.length, MAX_QUEUE_ITEMS); i++) {
         const song = status.queue[i]!;
         console.log(`  [${i + 1}] ${song.trackNumber}. ${stringifySong(song)}`)
     }
 
-    if (status.queue.length > 20)
+    if (status.queue.length > MAX_QUEUE_ITEMS)
         console.log("  (...)");
 }
 
@@ -62,10 +63,17 @@ export function stringifyArtist(artist: Artist): string {
 
 // Prompt options
 export function fuzzySearch<T>(entries: T[], keys: string[], query: string, limit: number): T[] {
-    const fuse = new Fuse(entries, { keys });
-    const matches = fuse.search(query).map(e => e.item);
+    const fuse = new Fuse(entries, {
+        keys,
+        threshold: 0.4,
+        ignoreLocation: true,
+        ignoreDiacritics: true,
+        findAllMatches: true,
+    });
 
+    const matches = fuse.search(query).map(e => e.item);
     matches.splice(limit);
+
     return matches;
 }
 
@@ -76,24 +84,22 @@ export async function promptOptions<T extends { name: string }>(
     promptText: string)
     : Promise<Result<T>>
 {
-    const matches = entries.filter(e => e.name.toLowerCase().trim() == query.toLowerCase().trim());
+    query = query.trim().toLowerCase();
+    const matches = entries.filter(e => e.name.trim().toLowerCase() == query);
 
     if (entries.length == 0) {
+        // No matches
         return {
             success: false,
             error: "No matches found"
         };
-    } else if (entries.length == 1) {
-        return {
-            success: true,
-            value: entries[0]!
-        };
     } else if (matches.length == 1 && matches[0] === entries[0]) {
+        // Perfect match
         return {
             success: true,
             value: matches[0]!
         };
-    } else {
+    } else if (entries.length > 1) {
         // Prompt options
         for (let i = 0; i < entries.length; i++) {
             const entry = entries[i]!;
@@ -119,6 +125,34 @@ export async function promptOptions<T extends { name: string }>(
         return {
             success: true,
             value: entries[numberResult.value - 1]!
+        };
+    } else {
+        // Single entry
+        const entry = entries[0]!;
+        console.log(stringify(entry));
+
+        let input = prompt(`Select this item? (Y/n): `) ?? "";
+        input = input.trim().toLowerCase();
+
+        if (['y', 'yes'].includes(input)) {
+            console.log();
+
+            return {
+                success: true,
+                value: entry
+            };
+        }
+
+        if (['n', 'no'].includes(input)) {
+            return {
+                success: false,
+                error: "Operation cancelled"
+            };
+        }
+
+        return {
+            success: false,
+            error: "Value must be y/n"
         };
     }
 }

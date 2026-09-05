@@ -54,7 +54,9 @@ export async function validatePositiveInteger(input: string): Promise<Result<num
 }
 
 type EntitySearch = Entity & {
-    name: string
+    name: string,
+    album: string,
+    artist: string
 };
 
 export async function validateEntity(input: string): Promise<Result<Entity>> {
@@ -86,17 +88,50 @@ export async function validateEntity(input: string): Promise<Result<Entity>> {
     const songs = albums.map(e => e.songs).flat();
 
     const entities: EntitySearch[] = [
-        songs.map((e): EntitySearch => { return { type: "song", name: stringifySong(e), value: e } }),
-        albums.map((e): EntitySearch => { return { type: "album", name: stringifyAlbum(e), value: e } }),
-        artists.map((e): EntitySearch => { return { type: "artist", name: stringifyArtist(e), value: e } })
+        songs.map((e): EntitySearch => {
+            return {
+                type: "song",
+                name: e.name,
+                album: e.album,
+                artist: e.artist,
+                value: e
+            };
+        }),
+        albums.map((e): EntitySearch => {
+            return {
+                type: "album",
+                name: e.name,
+                album: e.name,
+                artist: e.artist,
+                value: e
+            };
+        }),
+        artists.map((e): EntitySearch => {
+            return {
+                type: "artist",
+                name: e.name,
+                album: e.name,
+                artist: e.name,
+                value: e
+            };
+        })
     ].flat();
 
-    const searchOptions = fuzzySearch(entities, ['name'], input, 5);
+    const searchOptions = fuzzySearch(entities, ['name', 'album', 'artist'], input, 5);
 
     const matchResult = await promptOptions<EntitySearch>(
         searchOptions,
         input,
-        (e) => e.name,
+        (e) => {
+            switch (e.type) {
+                case "song":
+                    return stringifySong(e.value);
+                case "album":
+                    return stringifyAlbum(e.value);
+                default:
+                    return stringifyArtist(e.value);
+            }
+        },
         "an item"
     );
 
