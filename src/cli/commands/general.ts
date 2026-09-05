@@ -39,7 +39,7 @@ export async function skip(args: Argument[], flags: Flag[]): Promise<number> {
         return 1;
     }
 
-    logStatus(result.value);
+    logStatus(result.value, false);
     return 0;
 }
 
@@ -51,7 +51,7 @@ export async function pause(args: Argument[], flags: Flag[]): Promise<number> {
         return 1;
     }
 
-    logStatus(result.value);
+    logStatus(result.value, false);
     return 0;
 }
 
@@ -63,7 +63,7 @@ export async function resume(args: Argument[], flags: Flag[]): Promise<number> {
         return 1;
     }
 
-    logStatus(result.value);
+    logStatus(result.value, false);
     return 0;
 }
 
@@ -75,7 +75,7 @@ export async function stop(args: Argument[], flags: Flag[]): Promise<number> {
         return 1;
     }
 
-    console.log("Playback stopped");
+    logStatus(result.value)
     return 0;
 }
 

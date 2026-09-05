@@ -132,7 +132,7 @@ export async function validateEntity(input: string): Promise<Result<Entity>> {
                     return stringifyArtist(e.value);
             }
         },
-        "an item"
+        "an", "item"
     );
 
     if (!matchResult.success) return matchResult;
@@ -164,7 +164,7 @@ export async function validateSong(input: string): Promise<Result<Song>> {
         searchOptions,
         input,
         stringifySong,
-        "a song"
+        "a", "song"
     );
 
     if (!matchResult.success) return matchResult;
@@ -262,7 +262,7 @@ export async function validateAlbum(input: string): Promise<Result<Album>> {
         searchOptions,
         input,
         stringifyAlbum,
-        "an album"
+        "an", "album"
     );
 
     if (!matchResult.success) return matchResult;
@@ -291,7 +291,7 @@ export async function validateArtist(input: string): Promise<Result<Artist>> {
         searchOptions,
         input,
         stringifyArtist,
-        "an artist"
+        "an", "artist"
     );
 
     if (!matchResult.success) return matchResult;

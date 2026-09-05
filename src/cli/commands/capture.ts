@@ -49,9 +49,10 @@ async function captureTrack(track: TrackMetadata): Promise<Result<Song>> {
 async function capture<T extends { name: string }>(
     query: string,
     search: (query: string) => Promise<Result<T[]>>,
-    promptName: string,
     stringify: (entry: T) => string,
-    getTracks: (entry: T) => Promise<Result<TrackMetadata[]>>)
+    getTracks: (entry: T) => Promise<Result<TrackMetadata[]>>,
+    pronoun: string,
+    itemName: string)
     : Promise<number>
 {
     const searchResult = await search(query);
@@ -62,7 +63,7 @@ async function capture<T extends { name: string }>(
     }
 
     // Get chosen option
-    const matchResult = await promptOptions(searchResult.value, query, stringify, promptName);
+    const matchResult = await promptOptions(searchResult.value, query, stringify, pronoun, itemName);
 
     if (!matchResult.success) {
         console.error(matchResult.error);
@@ -103,14 +104,14 @@ export async function captureSong(args: Argument[], flags: Flag[]): Promise<numb
     return await capture<TrackMetadata>(
         query,
         searchTracks,
-        "a song",
         (track) => `${track.album.artist.name} - ${track.name} (${track.album.name})`,
         async (track) => {
             return {
                 success: true,
                 value: [track]
             };
-        }
+        },
+        "a", "song"
     );
 }
 
@@ -120,9 +121,9 @@ export async function captureAlbum(args: Argument[], flags: Flag[]): Promise<num
     return await capture<AlbumMetadata>(
         query,
         searchAlbums,
-        "an album",
         (album) => `${album.artist.name} - ${album.name}`,
-        tracksFromAlbum
+        tracksFromAlbum,
+        "a", "song"
     );
 }
 
@@ -132,8 +133,8 @@ export async function captureArtist(args: Argument[], flags: Flag[]): Promise<nu
     return await capture<ArtistMetadata>(
         query,
         searchArtists,
-        "an artist",
         (artist) => artist.name,
-        tracksFromArtist
+        tracksFromArtist,
+        "an", "artist"
     );
 }

@@ -25,14 +25,14 @@ export function logObject(object: Record<string, any>, indented: boolean = false
     }
 }
 
-export function logStatus(status: Status): void {
+export function logStatus(status: Status, showQueue: boolean = true): void {
     if (!status.playing) {
         console.log("Nothing playing");
         return;
     }
 
     console.log(`${status.paused ? "Paused" : "Now playing"}: ${stringifySong(status.song)}`);
-    if (status.queue.length == 0) return;
+    if (status.queue.length == 0 || !showQueue) return;
 
     console.log("\nQueue:");
 
@@ -81,7 +81,8 @@ export async function promptOptions<T extends { name: string }>(
     entries: T[],
     query: string,
     stringify: (entry: T) => string,
-    promptText: string)
+    pronoun: string,
+    itemName: string)
     : Promise<Result<T>>
 {
     query = query.trim().toLowerCase();
@@ -107,7 +108,7 @@ export async function promptOptions<T extends { name: string }>(
         }
 
         const range = `(1 - ${entries.length})`;
-        const input = prompt(`\nSelect ${promptText} ${range}:`) ?? '';
+        const input = prompt(`\nSelect ${pronoun} ${itemName} ${range}:`) ?? '';
 
         let numberResult = await validatePositiveInteger(input);
         if (!numberResult.success) return numberResult;
@@ -131,7 +132,7 @@ export async function promptOptions<T extends { name: string }>(
         const entry = entries[0]!;
         console.log(stringify(entry));
 
-        let input = prompt(`Select this item? (Y/n): `) ?? '';
+        let input = prompt(`Select this ${itemName}? (Y/n): `) ?? '';
         input = input.trim().toLowerCase();
 
         if (['y', 'yes'].includes(input) || input == '') {

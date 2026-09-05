@@ -21,7 +21,7 @@ function sanitize(input: string): string {
 
 // Get track source
 export async function sourceFromTrack(track: TrackMetadata): Promise<Result<string>> {
-    const url = `https://music.youtube.com/search?q=${encodeURIComponent(track.album.artist.name)}+-+${encodeURIComponent(track.name)}]`;
+    const url = `https://music.youtube.com/search?q=${encodeURIComponent(track.album.artist.name)}+-+${encodeURIComponent(track.name)}`;
     const process = Bun.spawn(["yt-dlp", "-I", "1", url, "--get-id"], { stderr: "ignore" });
 
     const exitCode = await process.exited;

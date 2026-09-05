@@ -124,10 +124,10 @@ async function connect(path: string): Promise<void> {
             socket = await Bun.connect({
                 unix: path,
                 socket: {
-                    open(socket) { },
-                    data(socket, chunk) { },
-                    close(socket) { },
-                    error(socket, error) { console.error(`mpv IPC error: ${error}`); },
+                    open(_) { },
+                    data(_, chunk) { },
+                    close(_) { },
+                    error(_, error) { console.error(`mpv IPC error: ${error}`); },
                 }
             });
 
