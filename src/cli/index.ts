@@ -1,11 +1,11 @@
 import { validateAlbum, validateArtist, validateEntity, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateSwitch, validateYouTubeSource } from "./framework/validate";
 import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
+import { artistEdit, artistList, artistRemove, artistShow } from "./commands/artist";
 import { albumEdit, albumList, albumRemove, albumShow } from "./commands/album";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
-import { play, root, skip, status, stop } from "./commands/general";
+import { pause, play, resume, root, skip, status, stop } from "./commands/general";
 import { handle, registerCommand } from "./framework/handler"
 import { pull } from "./commands/pull";
-import { artistEdit, artistList, artistRemove, artistShow } from "./commands/artist";
 
 let args = Bun.argv.slice(2);
 
@@ -60,6 +60,22 @@ registerCommand({
     args: [],
     flags: [],
     run: skip
+});
+
+registerCommand({
+    route: ["pause"],
+    description: "Pause the current song",
+    args: [],
+    flags: [],
+    run: pause
+});
+
+registerCommand({
+    route: ["resume"],
+    description: "Resume the current song",
+    args: [],
+    flags: [],
+    run: resume
 });
 
 registerCommand({

@@ -1,7 +1,7 @@
 import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema, type PlaybackRequest, type Status } from "../core/library"
 import type { Result } from "../core/task";
 import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong } from "./library";
-import { getStatus, playLast, playNext, playReplace, skip, songsFromEntity, stop } from "./player"
+import { getStatus, pause, playLast, playNext, playReplace, resume, skip, songsFromEntity, stop } from "./player"
 import { PORT } from "../core/config";
 import z from "zod"
 
@@ -21,6 +21,16 @@ export function serve(): void {
 
                     if (playbackRequest.method == "skip") {
                         const status = skip();
+                        return Response.json(status, { status: 200 });
+                    }
+
+                    if (playbackRequest.method == "pause") {
+                        const status = pause();
+                        return Response.json(status, { status: 200 });
+                    }
+
+                    if (playbackRequest.method == "resume") {
+                        const status = resume();
                         return Response.json(status, { status: 200 });
                     }
 

@@ -31,11 +31,35 @@ export async function play(args: Argument[], flags: Flag[]): Promise<number> {
     return 0;
 }
 
-export async function skip(args: Argument[], flags: Flags[]): Promise<number> {
+export async function skip(args: Argument[], flags: Flag[]): Promise<number> {
     const result = await post_playback({ method: "skip" });
 
     if (!result.success) {
         console.error(`Failed to skip song: ${result.error}`);
+        return 1;
+    }
+
+    logStatus(result.value);
+    return 0;
+}
+
+export async function pause(args: Argument[], flags: Flag[]): Promise<number> {
+    const result = await post_playback({ method: "pause" });
+
+    if (!result.success) {
+        console.error(`Failed to pause song: ${result.error}`);
+        return 1;
+    }
+
+    logStatus(result.value);
+    return 0;
+}
+
+export async function resume(args: Argument[], flags: Flag[]): Promise<number> {
+    const result = await post_playback({ method: "resume" });
+
+    if (!result.success) {
+        console.error(`Failed to resume song: ${result.error}`);
         return 1;
     }
 

@@ -60,7 +60,7 @@ export type ArtistData = z.infer<typeof ArtistDataSchema>;
 export type Library = z.infer<typeof LibrarySchema>;
 
 export type Status =
-    | { playing: true, song: Song, queue: Song[] }
+    | { playing: true, paused: boolean, song: Song, queue: Song[] }
     | { playing: false }
 
 export type Entity =
@@ -73,3 +73,5 @@ export type PlaybackRequest =
     | { method: "next", entity: Entity }
     | { method: "last", entity: Entity }
     | { method: "skip" }
+    | { method: "pause" }
+    | { method: "resume" }

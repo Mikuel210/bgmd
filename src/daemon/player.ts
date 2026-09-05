@@ -1,8 +1,11 @@
 import type { Entity, Song, Status } from "../core/library";
 import type { Result } from "../core/task";
+import { sleep, type Socket } from "bun";
 
 let status: Status = { playing: false };
 let process: Bun.Subprocess | null = null;
+let socketPath: string | null = null;
+let socket: Socket | null = null;
 
 export const getStatus = () => status;
 
@@ -20,6 +23,7 @@ export function songsFromEntity(entity: Entity): Song[] {
 export function playReplace(songs: Song[]): Result<Status> {
     status = {
         playing: true,
+        paused: false,
         song: songs[0]!,
         queue: songs.slice(1)
     };
@@ -38,6 +42,7 @@ export function playNext(songs: Song[]): Result<Status> {
 
     status = {
         playing: true,
+        paused: false,
         song: status.song,
         queue: songs.concat(status.queue)
     };
@@ -53,6 +58,7 @@ export function playLast(songs: Song[]): Result<Status> {
 
     status = {
         playing: true,
+        paused: false,
         song: status.song,
         queue: status.queue.concat(songs)
     };
@@ -84,11 +90,12 @@ function play(): Result<Status> {
 
     // Spawn mpv process
     let command: string[] = [];
+    socketPath = `/tmp/mpv-${crypto.randomUUID()}.sock`;
 
     if (song.localSource) {
-        command = ["mpv", song.localSource, "--aid=1"];
+        command = ["mpv", `--input-ipc-server=${socketPath}`, song.localSource, "--aid=1"];
     } else if (song.youtubeSource) {
-        command = ["mpv", song.youtubeSource, "--no-video", "--aid=1"];
+        command = ["mpv", `--input-ipc-server=${socketPath}`, song.youtubeSource, "--no-video", "--aid=1"];
     } else {
         return {
             success: false,
@@ -101,7 +108,9 @@ function play(): Result<Status> {
             if (exitCode == 4) return;
             skip();
         }
-    })
+    });
+
+    connect(socketPath);
 
     return {
         success: true,
@@ -109,11 +118,35 @@ function play(): Result<Status> {
     };
 }
 
+async function connect(path: string): Promise<void> {
+    for (let i = 0; i < 50; i++) {
+        try {
+            socket = await Bun.connect({
+                unix: path,
+                socket: {
+                    open(socket) { },
+                    data(socket, chunk) { },
+                    close(socket) { },
+                    error(socket, error) { console.error(`mpv IPC error: ${error}`); },
+                }
+            });
+
+            return;
+        } catch {
+            await sleep(20);
+        }
+    }
+}
+
+function send(command: any[], request_id?: number) {
+    socket?.write(JSON.stringify({ command, request_id }) + '\n');
+}
+
 export function skip(): Status {
     if (!status.playing) return status;
 
     if (process != null)
-        process.kill();
+        kill();
 
     if (status.queue.length == 0) {
         status = {
@@ -125,6 +158,7 @@ export function skip(): Status {
 
     status = {
         playing: true,
+        paused: false,
         song: status.queue[0]!,
         queue: status.queue.slice(1)
     };
@@ -133,12 +167,40 @@ export function skip(): Status {
     return status;
 }
 
+export function pause(): Status {
+    if (!status.playing || status.paused || !process || !socket)
+        return status;
+
+    send(["set_property", "pause", true]);
+    status.paused = true;
+
+    return status;
+}
+
+export function resume(): Status {
+    if (!status.playing || !status.paused || !process || !socket)
+        return status;
+
+    send(["set_property", "pause", false]);
+    status.paused = false;
+
+    return status;
+}
+
 export function stop(): Status {
-    if (process) process.kill();
+    kill();
 
     status = {
         playing: false
     };
 
     return status;
+}
+
+function kill() {
+    if (!process) return;
+
+    process.kill();
+    process = null;
+    socket = null;
 }
