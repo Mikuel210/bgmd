@@ -2,7 +2,7 @@ import { validateAlbum, validateArtist, validateEntity, validateLocalSource, val
 import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
 import { albumEdit, albumList, albumRemove, albumShow } from "./commands/album";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
-import { play, root, status, stop } from "./commands/general";
+import { play, root, skip, status, stop } from "./commands/general";
 import { handle, registerCommand } from "./framework/handler"
 import { pull } from "./commands/pull";
 import { artistEdit, artistList, artistRemove, artistShow } from "./commands/artist";
@@ -52,6 +52,14 @@ registerCommand({
         }
     ],
     run: play
+});
+
+registerCommand({
+    route: ["skip"],
+    description: "Skip the current song",
+    args: [],
+    flags: [],
+    run: skip
 });
 
 registerCommand({

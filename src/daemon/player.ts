@@ -99,23 +99,7 @@ function play(): Result<Status> {
     process = Bun.spawn(command, {
         onExit(_, exitCode) {
             if (exitCode == 4) return;
-            if (!status.playing) return;
-
-            if (status.queue.length == 0) {
-                status = {
-                    playing: false
-                };
-
-                return;
-            }
-
-            status = {
-                playing: true,
-                song: status.queue[0]!,
-                queue: status.queue.slice(1)
-            };
-
-            play();
+            skip();
         }
     })
 
@@ -123,6 +107,30 @@ function play(): Result<Status> {
         success: true,
         value: status
     };
+}
+
+export function skip(): Status {
+    if (!status.playing) return status;
+
+    if (process != null)
+        process.kill();
+
+    if (status.queue.length == 0) {
+        status = {
+            playing: false
+        };
+
+        return status;
+    }
+
+    status = {
+        playing: true,
+        song: status.queue[0]!,
+        queue: status.queue.slice(1)
+    };
+
+    play();
+    return status;
 }
 
 export function stop(): Status {

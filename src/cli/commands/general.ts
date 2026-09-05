@@ -1,7 +1,7 @@
 import type { Argument, Flag } from "../framework/command";
 import { type Entity } from "../../core/library";
 import { post_playback, get_playback, delete_playback } from "../connection";
-import { stringifyStatus } from "../formatter";
+import { logStatus } from "../formatter";
 
 export async function root(args: Argument[], flags: Flag[]): Promise<number> {
     console.log("usage: bgmctl <command> [<args>]");
@@ -27,7 +27,19 @@ export async function play(args: Argument[], flags: Flag[]): Promise<number> {
         return 1;
     }
 
-    stringifyStatus(result.value);
+    logStatus(result.value);
+    return 0;
+}
+
+export async function skip(args: Argument[], flags: Flags[]): Promise<number> {
+    const result = await post_playback({ method: "skip" });
+
+    if (!result.success) {
+        console.error(`Failed to skip song: ${result.error}`);
+        return 1;
+    }
+
+    logStatus(result.value);
     return 0;
 }
 
@@ -51,6 +63,6 @@ export async function status(): Promise<number> {
         return 1;
     }
 
-    stringifyStatus(result.value);
+    logStatus(result.value);
     return 0;
 }

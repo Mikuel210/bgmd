@@ -68,7 +68,8 @@ export type Entity =
     | { type: "album", value: Album }
     | { type: "artist", value: Artist }
 
-export interface PlaybackRequest {
-    method: "replace" | "next" | "last",
-    entity: Entity
-}
+export type PlaybackRequest =
+    | { method: "replace", entity: Entity }
+    | { method: "next", entity: Entity }
+    | { method: "last", entity: Entity }
+    | { method: "skip" }

@@ -25,7 +25,7 @@ export function logObject(object: Record<string, any>, indented: boolean = false
     }
 }
 
-export function stringifyStatus(status: Status): void {
+export function logStatus(status: Status): void {
     if (!status.playing) {
         console.log("Nothing playing");
         return;

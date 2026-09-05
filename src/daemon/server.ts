@@ -1,7 +1,7 @@
 import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema, type PlaybackRequest, type Status } from "../core/library"
 import type { Result } from "../core/task";
 import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong } from "./library";
-import { getStatus, playLast, playNext, playReplace, songsFromEntity, stop } from "./player"
+import { getStatus, playLast, playNext, playReplace, skip, songsFromEntity, stop } from "./player"
 import { PORT } from "../core/config";
 import z from "zod"
 
@@ -18,6 +18,12 @@ export function serve(): void {
 
                 POST: async (request) => {
                     const playbackRequest = await request.json() as PlaybackRequest;
+
+                    if (playbackRequest.method == "skip") {
+                        const status = skip();
+                        return Response.json(status, { status: 200 });
+                    }
+
                     const songs = songsFromEntity(playbackRequest.entity);
                     let playResult: Result<Status>;
 
