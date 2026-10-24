@@ -17,14 +17,16 @@ bgmd is a music daemon that constantly matches music to your current mood. My go
 ## Usage
 
 Manage playback:
+
 - bgmctl status
-- bgmctl play 
+- bgmctl play
 - bgmctl skip TODO
 - bgmctl pause TODO
 - bgmctl resume TODO
 - bgmctl stop
 
 Manage library:
+
 - bgmctl pull
 - bgmctl song <list|add|show|edit|remove>
 - bgmctl album <list|show|edit|remove>
@@ -32,6 +34,7 @@ Manage library:
 - bgmctl capture <song|album|artist>
 
 Manage mood: TODO
+
 - bgmctl mood show
 - bgmctl mood set
 - bgmctl mood unset

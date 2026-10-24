@@ -175,7 +175,7 @@ async function albumsFromArtist(artist: ArtistMetadata): Promise<Result<AlbumMet
         name: e.collectionName,
         artist: {
           id: e.artistId,
-          name: e.artistName,
+          name: artist.name,
         },
       };
     });
