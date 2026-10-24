@@ -147,7 +147,7 @@ export async function tracksFromAlbum(album: AlbumMetadata): Promise<Result<Trac
           name: e.collectionName,
           artist: {
             id: e.artistId,
-            name: e.artistName,
+            name: album.artist.name,
           },
         },
       };
