@@ -72,6 +72,14 @@ export async function put_librarySongs(song: Song): Promise<Result<Song>> {
     });
 }
 
+export async function post_librarySongsValidate(data: SongData): Promise<Result<SongData>> {
+    return await fetchResult(DAEMON_URL + "library/songs/validate", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" }
+    });
+}
+
 export async function delete_librarySongsId(id: string): Promise<Result<Song>> {
     return await fetchResult(DAEMON_URL + `library/songs/${id}`, {
         method: "DELETE"

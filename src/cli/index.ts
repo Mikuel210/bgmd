@@ -1,415 +1,451 @@
-import { validateAlbum, validateArtist, validateEntity, validateLocalSource, validatePositiveInteger, validateSong, validateString, validateSwitch, validateYouTubeSource } from "./framework/validate";
+import {
+  validateAlbum,
+  validateArtist,
+  validateEntity,
+  validateLocalSource,
+  validatePositiveInteger,
+  validateSong,
+  validateString,
+  validateSwitch,
+  validateYouTubeSource,
+} from "./framework/validate";
+
 import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
 import { artistEdit, artistList, artistRemove, artistShow } from "./commands/artist";
 import { albumEdit, albumList, albumRemove, albumShow } from "./commands/album";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
 import { pause, play, resume, root, skip, status, stop } from "./commands/general";
-import { handle, registerCommand } from "./framework/handler"
+import { handle, registerCommand } from "./framework/handler";
 import { pull } from "./commands/pull";
+import type { TrackMetadata } from "./resolver";
+import { sourceFromTrack } from "./downloader";
 
 let args = Bun.argv.slice(2);
 
+function getTrack(name: string, album: string, artist: string): TrackMetadata {
+  return {
+    id: 1,
+    name,
+    trackNumber: 1,
+    discNumber: 1,
+    album: {
+      id: 1,
+      name: album,
+      artist: {
+        id: 1,
+        name: artist,
+      },
+    },
+  };
+}
+
+const result = await sourceFromTrack(
+  getTrack("patient zero", "the life of a showgirl", "taylor swift"),
+);
+
+console.log(result);
+
 registerCommand({
-    route: [],
-    description: "The background music daemon",
-    args: [],
-    flags: [],
-    run: root
+  route: [],
+  description: "The background music daemon",
+  args: [],
+  flags: [],
+  run: root,
 });
 
 registerCommand({
-    route: ["status"],
-    description: "See the current status of playback",
-    args: [],
-    flags: [],
-    run: status
+  route: ["status"],
+  description: "See the current status of playback",
+  args: [],
+  flags: [],
+  run: status,
 });
 
 registerCommand({
-    route: ["play"],
-    description: "Play a song, album or artist",
-    args: [
-        {
-            name: "query",
-            description: "The name or ID of the item to play",
-            validate: validateEntity
-        }
-    ],
-    flags: [
-        {
-            longName: "next",
-            shortName: 'n',
-            description: "Add the item to the queue next",
-            switch: true,
-            validate: validateSwitch
-        },
-        {
-            longName: "last",
-            shortName: 'l',
-            description: "Add the item to the end of the queue",
-            switch: true,
-            validate: validateSwitch
-        }
-    ],
-    run: play
+  route: ["play"],
+  description: "Play a song, album or artist",
+  args: [
+    {
+      name: "query",
+      description: "The name or ID of the item to play",
+      validate: validateEntity,
+    },
+  ],
+  flags: [
+    {
+      longName: "next",
+      shortName: "n",
+      description: "Add the item to the queue next",
+      switch: true,
+      validate: validateSwitch,
+    },
+    {
+      longName: "last",
+      shortName: "l",
+      description: "Add the item to the end of the queue",
+      switch: true,
+      validate: validateSwitch,
+    },
+  ],
+  run: play,
 });
 
 registerCommand({
-    route: ["skip"],
-    description: "Skip the current song",
-    args: [],
-    flags: [],
-    run: skip
+  route: ["skip"],
+  description: "Skip the current song",
+  args: [],
+  flags: [],
+  run: skip,
 });
 
 registerCommand({
-    route: ["pause"],
-    description: "Pause the current song",
-    args: [],
-    flags: [],
-    run: pause
+  route: ["pause"],
+  description: "Pause the current song",
+  args: [],
+  flags: [],
+  run: pause,
 });
 
 registerCommand({
-    route: ["resume"],
-    description: "Resume the current song",
-    args: [],
-    flags: [],
-    run: resume
+  route: ["resume"],
+  description: "Resume the current song",
+  args: [],
+  flags: [],
+  run: resume,
 });
 
 registerCommand({
-    route: ["stop"],
-    description: "Stop playback",
-    args: [],
-    flags: [],
-    run: stop
+  route: ["stop"],
+  description: "Stop playback",
+  args: [],
+  flags: [],
+  run: stop,
 });
 
 registerCommand({
-    route: ["song", "list"],
-    description: "List all songs in the library",
-    args: [],
-    flags: [],
-    run: songList
+  route: ["song", "list"],
+  description: "List all songs in the library",
+  args: [],
+  flags: [],
+  run: songList,
 });
 
 registerCommand({
-    route: ["song", "add"],
-    description: "Add a song to the library",
-    args: [
-        {
-            name: "name",
-            description: "The name of the song to add",
-            validate: validateString
-        },
-        {
-            name: "album",
-            description: "The album of the song to add",
-            validate: validateString
-        },
-        {
-            name: "artist",
-            description: "The artist of the song to add",
-            validate: validateString
-        }
-    ],
-    flags: [
-        {
-            longName: "disc-number",
-            shortName: 'd',
-            description: "Set the disc number for the song (default 1)",
-            switch: false,
-            validate: validatePositiveInteger
-        },
-        {
-            longName: "track-number",
-            shortName: 't',
-            description: "Set the track number for the song (default next empty in disc)",
-            switch: false,
-            validate: validatePositiveInteger
-        },
-        {
-            longName: "youtube-source",
-            shortName: 'y',
-            description: "Add a YouTube source for the song",
-            switch: false,
-            validate: validateYouTubeSource
-        },
-        {
-            longName: "local-source",
-            shortName: 'l',
-            description: "Add a local source for the song",
-            switch: false,
-            validate: validateLocalSource
-        }
-    ],
-    run: songAdd
+  route: ["song", "add"],
+  description: "Add a song to the library",
+  args: [
+    {
+      name: "name",
+      description: "The name of the song to add",
+      validate: validateString,
+    },
+    {
+      name: "album",
+      description: "The album of the song to add",
+      validate: validateString,
+    },
+    {
+      name: "artist",
+      description: "The artist of the song to add",
+      validate: validateString,
+    },
+  ],
+  flags: [
+    {
+      longName: "disc-number",
+      shortName: "d",
+      description: "Set the disc number for the song (default 1)",
+      switch: false,
+      validate: validatePositiveInteger,
+    },
+    {
+      longName: "track-number",
+      shortName: "t",
+      description: "Set the track number for the song (default next empty in disc)",
+      switch: false,
+      validate: validatePositiveInteger,
+    },
+    {
+      longName: "youtube-source",
+      shortName: "y",
+      description: "Add a YouTube source for the song",
+      switch: false,
+      validate: validateYouTubeSource,
+    },
+    {
+      longName: "local-source",
+      shortName: "l",
+      description: "Add a local source for the song",
+      switch: false,
+      validate: validateLocalSource,
+    },
+  ],
+  run: songAdd,
 });
 
 registerCommand({
-    route: ["song", "show"],
-    description: "Show the properties of a song",
-    args: [
-        {
-            name: "song",
-            description: "The name or ID of the song to show",
-            validate: validateSong
-        }
-    ],
-    flags: [],
-    run: songShow
+  route: ["song", "show"],
+  description: "Show the properties of a song",
+  args: [
+    {
+      name: "song",
+      description: "The name or ID of the song to show",
+      validate: validateSong,
+    },
+  ],
+  flags: [],
+  run: songShow,
 });
 
 registerCommand({
-    route: ["song", "edit"],
-    description: "Edit the properties of a song",
-    args: [
-        {
-            name: "song",
-            description: "The name or ID of the song to show",
-            validate: validateSong
-        }
-    ],
-    flags: [
-        {
-            longName: "name",
-            shortName: 'n',
-            description: "Change the name of the song",
-            switch: false,
-            validate: validateString
-        },
-        {
-            longName: "album",
-            shortName: 'a',
-            description: "Change the album of the song",
-            switch: false,
-            validate: validateString
-        },
-        {
-            longName: "artist",
-            shortName: 'x',
-            description: "Change the artist of the song",
-            switch: false,
-            validate: validateString
-        },
-        {
-            longName: "disc-number",
-            shortName: 'd',
-            description: "Change the disc number for the song",
-            switch: false,
-            validate: validatePositiveInteger
-        },
-        {
-            longName: "track-number",
-            shortName: 't',
-            description: "Change the track number for the song",
-            switch: false,
-            validate: validatePositiveInteger
-        },
-        {
-            longName: "youtube-source",
-            shortName: 'y',
-            description: "Change the YouTube source of the song",
-            switch: false,
-            validate: validateYouTubeSource
-        },
-        {
-            longName: "local-source",
-            shortName: 'l',
-            description: "Change the local source of the song",
-            switch: false,
-            validate: validateLocalSource
-        }
-    ],
-    run: songEdit
+  route: ["song", "edit"],
+  description: "Edit the properties of a song",
+  args: [
+    {
+      name: "song",
+      description: "The name or ID of the song to show",
+      validate: validateSong,
+    },
+  ],
+  flags: [
+    {
+      longName: "name",
+      shortName: "n",
+      description: "Change the name of the song",
+      switch: false,
+      validate: validateString,
+    },
+    {
+      longName: "album",
+      shortName: "a",
+      description: "Change the album of the song",
+      switch: false,
+      validate: validateString,
+    },
+    {
+      longName: "artist",
+      shortName: "x",
+      description: "Change the artist of the song",
+      switch: false,
+      validate: validateString,
+    },
+    {
+      longName: "disc-number",
+      shortName: "d",
+      description: "Change the disc number for the song",
+      switch: false,
+      validate: validatePositiveInteger,
+    },
+    {
+      longName: "track-number",
+      shortName: "t",
+      description: "Change the track number for the song",
+      switch: false,
+      validate: validatePositiveInteger,
+    },
+    {
+      longName: "youtube-source",
+      shortName: "y",
+      description: "Change the YouTube source of the song",
+      switch: false,
+      validate: validateYouTubeSource,
+    },
+    {
+      longName: "local-source",
+      shortName: "l",
+      description: "Change the local source of the song",
+      switch: false,
+      validate: validateLocalSource,
+    },
+  ],
+  run: songEdit,
 });
 
 registerCommand({
-    route: ["song", "remove"],
-    description: "Remove a song from the library",
-    args: [
-        {
-            name: "song",
-            description: "The name or ID of the song to remove",
-            validate: validateSong
-        }
-    ],
-    flags: [],
-    run: songRemove
+  route: ["song", "remove"],
+  description: "Remove a song from the library",
+  args: [
+    {
+      name: "song",
+      description: "The name or ID of the song to remove",
+      validate: validateSong,
+    },
+  ],
+  flags: [],
+  run: songRemove,
 });
 
 registerCommand({
-    route: ["album", "list"],
-    description: "List all albums in the library",
-    args: [],
-    flags: [],
-    run: albumList
+  route: ["album", "list"],
+  description: "List all albums in the library",
+  args: [],
+  flags: [],
+  run: albumList,
 });
 
 registerCommand({
-    route: ["album", "show"],
-    description: "Show the properties of an album",
-    args: [
-        {
-            name: "album",
-            description: "The name of the album to show",
-            validate: validateAlbum
-        }
-    ],
-    flags: [],
-    run: albumShow
+  route: ["album", "show"],
+  description: "Show the properties of an album",
+  args: [
+    {
+      name: "album",
+      description: "The name of the album to show",
+      validate: validateAlbum,
+    },
+  ],
+  flags: [],
+  run: albumShow,
 });
 
 registerCommand({
-    route: ["album", "edit"],
-    description: "Edit the properties of an album",
-    args: [
-        {
-            name: "album",
-            description: "The name of the album to edit",
-            validate: validateAlbum
-        }
-    ],
-    flags: [
-        {
-            longName: "name",
-            shortName: 'n',
-            description: "Change the name of the album",
-            switch: false,
-            validate: validateString
-        },
-        {
-            longName: "artist",
-            shortName: 'a',
-            description: "Change the artist of the album",
-            switch: false,
-            validate: validateString
-        }
-    ],
-    run: albumEdit
+  route: ["album", "edit"],
+  description: "Edit the properties of an album",
+  args: [
+    {
+      name: "album",
+      description: "The name of the album to edit",
+      validate: validateAlbum,
+    },
+  ],
+  flags: [
+    {
+      longName: "name",
+      shortName: "n",
+      description: "Change the name of the album",
+      switch: false,
+      validate: validateString,
+    },
+    {
+      longName: "artist",
+      shortName: "a",
+      description: "Change the artist of the album",
+      switch: false,
+      validate: validateString,
+    },
+  ],
+  run: albumEdit,
 });
 
 registerCommand({
-    route: ["album", "remove"],
-    description: "Remove an album from the library",
-    args: [
-        {
-            name: "album",
-            description: "The name of the album to remove",
-            validate: validateAlbum
-        }
-    ],
-    flags: [],
-    run: albumRemove
+  route: ["album", "remove"],
+  description: "Remove an album from the library",
+  args: [
+    {
+      name: "album",
+      description: "The name of the album to remove",
+      validate: validateAlbum,
+    },
+  ],
+  flags: [],
+  run: albumRemove,
 });
 
 registerCommand({
-    route: ["artist", "list"],
-    description: "List all artists in the library",
-    args: [],
-    flags: [],
-    run: artistList
+  route: ["artist", "list"],
+  description: "List all artists in the library",
+  args: [],
+  flags: [],
+  run: artistList,
 });
 
 registerCommand({
-    route: ["artist", "show"],
-    description: "Show the properties of an artist",
-    args: [
-        {
-            name: "artist",
-            description: "The name of the artist to show",
-            validate: validateArtist
-        }
-    ],
-    flags: [],
-    run: artistShow
+  route: ["artist", "show"],
+  description: "Show the properties of an artist",
+  args: [
+    {
+      name: "artist",
+      description: "The name of the artist to show",
+      validate: validateArtist,
+    },
+  ],
+  flags: [],
+  run: artistShow,
 });
 
 registerCommand({
-    route: ["artist", "edit"],
-    description: "Edit the properties of an artist",
-    args: [
-        {
-            name: "artist",
-            description: "The name of the artist to edit",
-            validate: validateArtist
-        }
-    ],
-    flags: [
-        {
-            longName: "name",
-            shortName: 'n',
-            description: "Change the name of the artist",
-            switch: false,
-            validate: validateString
-        }
-    ],
-    run: artistEdit
+  route: ["artist", "edit"],
+  description: "Edit the properties of an artist",
+  args: [
+    {
+      name: "artist",
+      description: "The name of the artist to edit",
+      validate: validateArtist,
+    },
+  ],
+  flags: [
+    {
+      longName: "name",
+      shortName: "n",
+      description: "Change the name of the artist",
+      switch: false,
+      validate: validateString,
+    },
+  ],
+  run: artistEdit,
 });
 
 registerCommand({
-    route: ["artist", "remove"],
-    description: "Remove an artist from the library",
-    args: [
-        {
-            name: "artist",
-            description: "The name of the artist to remove",
-            validate: validateArtist
-        }
-    ],
-    flags: [],
-    run: artistRemove
-})
-
-registerCommand({
-    route: ["capture", "song"],
-    description: "Search and add a song to the library",
-    args: [
-        {
-            name: "name",
-            description: "The name of the song to capture",
-            validate: validateString
-        }
-    ],
-    flags: [],
-    run: captureSong
+  route: ["artist", "remove"],
+  description: "Remove an artist from the library",
+  args: [
+    {
+      name: "artist",
+      description: "The name of the artist to remove",
+      validate: validateArtist,
+    },
+  ],
+  flags: [],
+  run: artistRemove,
 });
 
 registerCommand({
-    route: ["capture", "album"],
-    description: "Search and add an album to the library",
-    args: [
-        {
-            name: "name",
-            description: "The name of the album to capture",
-            validate: validateString
-        }
-    ],
-    flags: [],
-    run: captureAlbum
+  route: ["capture", "song"],
+  description: "Search and add a song to the library",
+  args: [
+    {
+      name: "name",
+      description: "The name of the song to capture",
+      validate: validateString,
+    },
+  ],
+  flags: [],
+  run: captureSong,
 });
 
 registerCommand({
-    route: ["capture", "artist"],
-    description: "Search and add an artist to the library",
-    args: [
-        {
-            name: "name",
-            description: "The name of the artist to capture",
-            validate: validateString
-        }
-    ],
-    flags: [],
-    run: captureArtist
+  route: ["capture", "album"],
+  description: "Search and add an album to the library",
+  args: [
+    {
+      name: "name",
+      description: "The name of the album to capture",
+      validate: validateString,
+    },
+  ],
+  flags: [],
+  run: captureAlbum,
 });
 
 registerCommand({
-    route: ["pull"],
-    description: "Download all missing songs in the library",
-    args: [],
-    flags: [],
-    run: pull
+  route: ["capture", "artist"],
+  description: "Search and add an artist to the library",
+  args: [
+    {
+      name: "name",
+      description: "The name of the artist to capture",
+      validate: validateString,
+    },
+  ],
+  flags: [],
+  run: captureArtist,
+});
+
+registerCommand({
+  route: ["pull"],
+  description: "Download all missing songs in the library",
+  args: [],
+  flags: [],
+  run: pull,
 });
 
 process.exit(await handle(args));

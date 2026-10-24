@@ -68,13 +68,29 @@ export function getSong(id: string): Promise<Result<Song>> {
     });
 }
 
-function isValidTrackNumber<T extends SongData>(songs: Song[], song: T): boolean {
+export function isValidTrackNumber<T extends SongData>(songs: Song[], song: T): boolean {
     return !songs.some(e =>
         e.artist == song.artist &&
         e.album == song.album &&
         e.discNumber == song.discNumber &&
         e.trackNumber == song.trackNumber
     );
+}
+
+export function validateSong(data: SongData): Promise<Result<SongData>> {
+    return withLibrary(async (library) => {
+        if (!isValidTrackNumber(library.songs, data)) {
+            return {
+                success: false,
+                error: `Track number already exists in disc`
+            };
+        }
+
+        return {
+            success: true,
+            value: data
+        };
+    });
 }
 
 export function addSong(data: SongData, explicitTrackNumber: boolean): Promise<Result<Song>> {

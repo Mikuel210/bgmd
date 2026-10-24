@@ -1,6 +1,6 @@
 import { AlbumDataSchema, ArtistDataSchema, SongDataSchema, SongSchema, type PlaybackRequest, type Status } from "../core/library"
 import type { Result } from "../core/task";
-import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong } from "./library";
+import { addSong, editAlbum, editArtist, editSong, getAlbums, getArtists, getSong, getSongs, removeAlbum, removeArtist, removeSong, validateSong } from "./library";
 import { getStatus, pause, playLast, playNext, playReplace, resume, skip, songsFromEntity, stop } from "./player"
 import { PORT } from "../core/config";
 import z from "zod"
@@ -159,6 +159,33 @@ export function serve(): void {
 
                     return Response.json(result.value, { status: 200 });
                 }
+            },
+            "/library/songs/validate": {
+                POST: async (request) => {
+                    const body = await request.json() as Record<string, any>;
+                    const dataResult = SongDataSchema.safeParse(body);
+
+                    if (!dataResult.success) {
+                        return Response.json(
+                            { error: "Invalid song", issues: z.prettifyError(dataResult.error!) },
+                            { status: 400 }
+                        );
+                    }
+
+                    const data = dataResult.data;
+
+                    // Validate track number
+                    const validateResult = await validateSong(data);
+
+                    if (!validateResult.success) {
+                        return Response.json(
+                            { error: validateResult.error },
+                            { status: 500 }
+                        );
+                    }
+
+                    return Response.json(validateResult.value, { status: 200 });
+                },
             },
             "/library/albums": {
                 GET: async () => {
