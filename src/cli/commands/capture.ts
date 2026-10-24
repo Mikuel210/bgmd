@@ -16,7 +16,6 @@ import type { Argument, Flag } from "../framework/command";
 import { post_librarySongs, post_librarySongsValidate } from "../connection";
 import { CONCURRENT_TASKS } from "../../core/config";
 import { sourceFromTrack } from "../downloader";
-import { X509Certificate } from "node:crypto";
 import { styleText } from "node:util";
 
 async function captureTrack(track: TrackMetadata): Promise<Result<Song>> {
