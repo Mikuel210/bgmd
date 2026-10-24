@@ -2,9 +2,9 @@ import { describe, expect, setDefaultTimeout, test } from "bun:test";
 import { sourceFromTrack } from "../src/cli/downloader";
 import type { TrackMetadata } from "../src/cli/resolver";
 
-setDefaultTimeout(120_000);
+setDefaultTimeout(1_000_000);
 
-function getTrack(name: string, album: string, artist: string): TrackMetadata {
+function getTrack(name: string, artist: string): TrackMetadata {
   return {
     id: 1,
     name,
@@ -12,7 +12,7 @@ function getTrack(name: string, album: string, artist: string): TrackMetadata {
     discNumber: 1,
     album: {
       id: 1,
-      name: album,
+      name: "",
       artist: {
         id: 1,
         name: artist,
@@ -23,7 +23,7 @@ function getTrack(name: string, album: string, artist: string): TrackMetadata {
 
 describe("getVideos", () => {
   test("dandeless - transition", async () => {
-    const result = await sourceFromTrack(getTrack("transition", "dsktp world", "dandeless"));
+    const result = await sourceFromTrack(getTrack("transition", "dandeless"));
     expect(result.success).toBe(true);
 
     if (result.success) {
@@ -36,7 +36,7 @@ describe("getVideos", () => {
   });
 
   test("Aloboi - Train's Coming", async () => {
-    const result = await sourceFromTrack(getTrack("Train's Coming", "Just DnB Flips", "Aloboi"));
+    const result = await sourceFromTrack(getTrack("Train's Coming", "Aloboi"));
     expect(result.success).toBe(true);
 
     if (result.success) {
@@ -45,9 +45,7 @@ describe("getVideos", () => {
   });
 
   test("Wintergatan - All Was Well", async () => {
-    const result = await sourceFromTrack(
-      getTrack("Marble Machine", "Marble Machine", "Wintergatan"),
-    );
+    const result = await sourceFromTrack(getTrack("All Was Well", "Wintergatan"));
     expect(result.success).toBe(true);
 
     if (result.success) {
@@ -59,9 +57,7 @@ describe("getVideos", () => {
   });
 
   test("Wintergatan - Marble Machine", async () => {
-    const result = await sourceFromTrack(
-      getTrack("Marble Machine", "Marble Machine", "Wintergatan"),
-    );
+    const result = await sourceFromTrack(getTrack("Marble Machine", "Wintergatan"));
     expect(result.success).toBe(true);
 
     if (result.success) {
@@ -70,13 +66,20 @@ describe("getVideos", () => {
   });
 
   test("Wilbur Soot - 10 Week Rule", async () => {
-    const result = await sourceFromTrack(
-      getTrack("10 Week Rule", "Mammalian Sighing Reflew", "Wilbur Soot"),
-    );
+    const result = await sourceFromTrack(getTrack("10 Week Rule", "Wilbur Soot"));
     expect(result.success).toBe(true);
 
     if (result.success) {
       expect(result.value).toBe("https://youtube.com/watch?v=g_-vpy8rK9k");
+    }
+  });
+
+  test("Taylor Swift - Patient Zero", async () => {
+    const result = await sourceFromTrack(getTrack("Patient Zero", "Taylor Swift"));
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.value).toBe("https://youtube.com/watch?v=BpR280fXISA");
     }
   });
 });

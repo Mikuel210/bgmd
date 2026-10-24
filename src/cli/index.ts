@@ -17,33 +17,8 @@ import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
 import { pause, play, resume, root, skip, status, stop } from "./commands/general";
 import { handle, registerCommand } from "./framework/handler";
 import { pull } from "./commands/pull";
-import type { TrackMetadata } from "./resolver";
-import { sourceFromTrack } from "./downloader";
 
 let args = Bun.argv.slice(2);
-
-function getTrack(name: string, album: string, artist: string): TrackMetadata {
-  return {
-    id: 1,
-    name,
-    trackNumber: 1,
-    discNumber: 1,
-    album: {
-      id: 1,
-      name: album,
-      artist: {
-        id: 1,
-        name: artist,
-      },
-    },
-  };
-}
-
-const result = await sourceFromTrack(
-  getTrack("patient zero", "the life of a showgirl", "taylor swift"),
-);
-
-console.log(result);
 
 registerCommand({
   route: [],
