@@ -117,8 +117,6 @@ async function getVideos(track: TrackMetadata, count: number): Promise<Result<Sc
     return { ...e, score };
   });
 
-  console.log(scoredVideos);
-
   return {
     success: true,
     value: scoredVideos,

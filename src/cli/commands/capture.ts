@@ -105,7 +105,7 @@ async function capture<T extends { name: string }>(
 
   await forEachConcurrent(tracks, async (track, index) => {
     const spinner = createSpinner(`Capturing song: ${track.name}`, index);
-    const captureResult = await captureTrack(track, spinner);
+    const captureResult = await captureTrack(track);
 
     if (!captureResult.success) {
       spinner.fail(`${captureResult.error}: ${track.name}`);
