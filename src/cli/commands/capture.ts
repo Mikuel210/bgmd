@@ -16,6 +16,8 @@ import type { Argument, Flag } from "../framework/command";
 import { post_librarySongs, post_librarySongsValidate } from "../connection";
 import { CONCURRENT_TASKS } from "../../core/config";
 import { sourceFromTrack } from "../downloader";
+import { X509Certificate } from "node:crypto";
+import { styleText } from "node:util";
 
 async function captureTrack(track: TrackMetadata): Promise<Result<Song>> {
   let data: SongData = {
@@ -31,13 +33,7 @@ async function captureTrack(track: TrackMetadata): Promise<Result<Song>> {
 
   // Validate result first to check for errors faster
   const validateResult = await post_librarySongsValidate(data);
-
-  if (!validateResult.success) {
-    return {
-      success: false,
-      error: `Failed to validate song: ${validateResult.error}`,
-    };
-  }
+  if (!validateResult.success) return validateResult;
 
   // Get YouTube source
   const sourceResult = await sourceFromTrack(track);
@@ -102,6 +98,8 @@ async function capture<T extends { name: string }>(
 
   // Capture songs
   reserveLines(Math.min(CONCURRENT_TASKS, tracks.length));
+  let successes = 0;
+  let failures = 0;
 
   await forEachConcurrent(tracks, async (track, index) => {
     const spinner = createSpinner(`Capturing song: ${track.name}`, index);
@@ -109,11 +107,19 @@ async function capture<T extends { name: string }>(
 
     if (!captureResult.success) {
       spinner.fail(`${captureResult.error}: ${track.name}`);
+      failures++;
       return;
     }
 
     spinner.succeed(`Song captured: ${stringifySong(captureResult.value, false)}`);
+    successes++;
   });
+
+  if (tracks.length > 1) {
+    let success = styleText("green", `✔ ${successes}`);
+    let failure = styleText("red", `✖ ${failures}`);
+    console.log(`\n${tracks.length} tracks | ${success} | ${failure}`);
+  }
 
   return 0;
 }
@@ -144,8 +150,8 @@ export async function captureAlbum(args: Argument[], flags: Flag[]): Promise<num
     searchAlbums,
     (album) => `${album.artist.name} - ${album.name}`,
     tracksFromAlbum,
-    "a",
-    "song",
+    "an",
+    "album",
   );
 }
 
