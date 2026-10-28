@@ -159,6 +159,20 @@ registerCommand({
 });
 
 registerCommand({
+  route: ["song", "capture"],
+  description: "Search and add a song to the library",
+  args: [
+    {
+      name: "name",
+      description: "The name of the song to capture",
+      validate: validateString,
+    },
+  ],
+  flags: [],
+  run: captureSong,
+});
+
+registerCommand({
   route: ["song", "show"],
   description: "Show the properties of a song",
   args: [
@@ -259,6 +273,20 @@ registerCommand({
 });
 
 registerCommand({
+  route: ["album", "capture"],
+  description: "Search and add an album to the library",
+  args: [
+    {
+      name: "name",
+      description: "The name of the album to capture",
+      validate: validateString,
+    },
+  ],
+  flags: [],
+  run: captureAlbum,
+});
+
+registerCommand({
   route: ["album", "show"],
   description: "Show the properties of an album",
   args: [
@@ -324,6 +352,20 @@ registerCommand({
 });
 
 registerCommand({
+  route: ["artist", "capture"],
+  description: "Search and add an artist to the library",
+  args: [
+    {
+      name: "name",
+      description: "The name of the artist to capture",
+      validate: validateString,
+    },
+  ],
+  flags: [],
+  run: captureArtist,
+});
+
+registerCommand({
   route: ["artist", "show"],
   description: "Show the properties of an artist",
   args: [
@@ -371,48 +413,6 @@ registerCommand({
   ],
   flags: [],
   run: artistRemove,
-});
-
-registerCommand({
-  route: ["capture", "song"],
-  description: "Search and add a song to the library",
-  args: [
-    {
-      name: "name",
-      description: "The name of the song to capture",
-      validate: validateString,
-    },
-  ],
-  flags: [],
-  run: captureSong,
-});
-
-registerCommand({
-  route: ["capture", "album"],
-  description: "Search and add an album to the library",
-  args: [
-    {
-      name: "name",
-      description: "The name of the album to capture",
-      validate: validateString,
-    },
-  ],
-  flags: [],
-  run: captureAlbum,
-});
-
-registerCommand({
-  route: ["capture", "artist"],
-  description: "Search and add an artist to the library",
-  args: [
-    {
-      name: "name",
-      description: "The name of the artist to capture",
-      validate: validateString,
-    },
-  ],
-  flags: [],
-  run: captureArtist,
 });
 
 registerCommand({
