@@ -175,7 +175,16 @@ export async function downloadSong(song: Song): Promise<Result<string>> {
   );
 
   const process = Bun.spawn(
-    ["yt-dlp", "-x", song.youtubeSource, "-o", outputPath, "--print", "after_move:filepath"],
+    [
+      "yt-dlp",
+      "--embed-metadata",
+      "-x",
+      song.youtubeSource,
+      "-o",
+      outputPath,
+      "--print",
+      "after_move:filepath",
+    ],
     { stdout: "pipe", stderr: "ignore" },
   );
 
