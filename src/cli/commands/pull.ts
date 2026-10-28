@@ -1,12 +1,11 @@
 import type { Argument, Flag } from "../framework/command";
 import type { Song } from "../../core/library";
 import { get_librarySongs, put_librarySongs } from "../connection";
-import { createSpinner, reserveLines } from "../formatter";
+import { createSpinner, logTracksResult, reserveLines } from "../formatter";
 import { CONCURRENT_DOWNLOADS } from "../../core/config";
 import { forEachConcurrent } from "../../core/task";
 import { stringifySong } from "../formatter";
 import { downloadSong } from "../downloader";
-import { styleText } from "node:util";
 
 export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
   const songsResult = await get_librarySongs();
@@ -53,11 +52,6 @@ export async function pull(args: Argument[], flags: Flag[]): Promise<number> {
     CONCURRENT_DOWNLOADS,
   );
 
-  if (toPull.length > 1) {
-    let success = styleText("green", `✔ ${successes}`);
-    let failure = styleText("red", `✖ ${failures}`);
-    console.log(`\n${toPull.length} tracks | ${success} | ${failure}`);
-  }
-
+  logTracksResult(successes, failures, 0);
   return 0;
 }

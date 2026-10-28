@@ -42,6 +42,15 @@ export function logStatus(status: Status, showQueue: boolean = true): void {
   if (status.queue.length > MAX_QUEUE_ITEMS) console.log("  (...)");
 }
 
+export function logTracksResult(successes: number, failures: number, warnings: number) {
+  const total = successes + failures + warnings;
+  let success = successes > 0 ? styleText("green", `✔ ${successes}`) : `✔ ${successes}`;
+  let failure = failures > 0 ? styleText("red", `✖ ${failures}`) : `✖ ${failures}`;
+  let warning = warnings > 0 ? styleText("yellow", `⚠ ${warnings}`) : `⚠ ${warnings}`;
+
+  console.log(`\n${total} track${total == 1 ? "" : "s"} | ${success} | ${failure} | ${warning}`);
+}
+
 export function stringifySong(song: Song, colors: boolean = true): string {
   const id = colors ? styleText(DARK_GREY, `[${song.id}]`) : `[${song.id}]`;
   const album = colors ? styleText(LIGHT_GREY, `(${song.album})`) : `(${song.album})`;
@@ -182,7 +191,6 @@ export function createSpinner(message: string, index: number): Spinner {
   const { frames, interval } = spinners.braille;
   let frameIndex = 0;
   let text = message;
-  let warning = false;
 
   function writeLine(content: string) {
     if (index >= reservedLines) {
@@ -197,10 +205,7 @@ export function createSpinner(message: string, index: number): Spinner {
   }
 
   const timer = setInterval(() => {
-    const frame = `${frames[frameIndex++ % frames.length]} ${text}`;
-
-    if (warning) writeLine(styleText("yellow", frame));
-    else writeLine(frame);
+    writeLine(`${frames[frameIndex++ % frames.length]} ${text}`);
   }, interval);
 
   return {
@@ -212,8 +217,8 @@ export function createSpinner(message: string, index: number): Spinner {
       writeLine(styleText("green", `✔ ${message}`));
     },
     warn(message: string) {
-      text = message;
-      warning = true;
+      clearInterval(timer);
+      writeLine(styleText("yellow", `⚠ ${message}`));
     },
     fail(message: string) {
       clearInterval(timer);

@@ -9,16 +9,22 @@ import {
   type TrackMetadata,
 } from "../resolver";
 
-import { createSpinner, promptOptions, reserveLines, stringifySong } from "../formatter";
+import {
+  createSpinner,
+  logTracksResult,
+  promptOptions,
+  reserveLines,
+  stringifySong,
+} from "../formatter";
+
+import { forEachConcurrent, WarningState, type Result, type WarningResult } from "../../core/task";
 import { SongState, type Song, type SongData } from "../../core/library";
-import { forEachConcurrent, type Result } from "../../core/task";
 import type { Argument, Flag } from "../framework/command";
 import { post_librarySongs, post_librarySongsValidate } from "../connection";
 import { CONCURRENT_TASKS } from "../../core/config";
 import { sourceFromTrack } from "../downloader";
-import { styleText } from "node:util";
 
-async function captureTrack(track: TrackMetadata): Promise<Result<Song>> {
+async function captureTrack(track: TrackMetadata): Promise<WarningResult<Song>> {
   let data: SongData = {
     name: track.name,
     album: track.album.name,
@@ -32,15 +38,21 @@ async function captureTrack(track: TrackMetadata): Promise<Result<Song>> {
 
   // Validate result first to check for errors faster
   const validateResult = await post_librarySongsValidate(data);
-  if (!validateResult.success) return validateResult;
+
+  if (!validateResult.success) {
+    return {
+      state: WarningState.Warning,
+      message: validateResult.error,
+    };
+  }
 
   // Get YouTube source
   const sourceResult = await sourceFromTrack(track);
 
   if (!sourceResult.success) {
     return {
-      success: false,
-      error: `Failed to fetch source: ${sourceResult.error}`,
+      state: WarningState.Failure,
+      error: sourceResult.error,
     };
   }
 
@@ -51,13 +63,13 @@ async function captureTrack(track: TrackMetadata): Promise<Result<Song>> {
 
   if (!addResult.success) {
     return {
-      success: false,
-      error: `Failed to add song: ${addResult.error}`,
+      state: WarningState.Failure,
+      error: addResult.error,
     };
   }
 
   return {
-    success: true,
+    state: WarningState.Success,
     value: addResult.value,
   };
 }
@@ -97,28 +109,33 @@ async function capture<T extends { name: string }>(
 
   // Capture songs
   reserveLines(Math.min(CONCURRENT_TASKS, tracks.length));
-  let successes = 0;
-  let failures = 0;
+  let results: WarningResult<Song>[] = [];
 
   await forEachConcurrent(tracks, async (track, index) => {
     const spinner = createSpinner(`Capturing song: ${track.name}`, index);
     const captureResult = await captureTrack(track);
+    results.push(captureResult);
 
-    if (!captureResult.success) {
-      spinner.fail(`${captureResult.error}: ${track.name}`);
-      failures++;
-      return;
+    switch (captureResult.state) {
+      case WarningState.Success:
+        spinner.succeed(`Song captured: ${stringifySong(captureResult.value, false)}`);
+        break;
+
+      case WarningState.Warning:
+        spinner.warn(`${captureResult.message}: ${track.name}`);
+        break;
+
+      case WarningState.Failure:
+        spinner.fail(`${captureResult.error}: ${track.name}`);
+        break;
     }
-
-    spinner.succeed(`Song captured: ${stringifySong(captureResult.value, false)}`);
-    successes++;
   });
 
-  if (tracks.length > 1) {
-    let success = styleText("green", `✔ ${successes}`);
-    let failure = styleText("red", `✖ ${failures}`);
-    console.log(`\n${tracks.length} tracks | ${success} | ${failure}`);
-  }
+  logTracksResult(
+    results.filter((e) => e.state == WarningState.Success).length,
+    results.filter((e) => e.state == WarningState.Failure).length,
+    results.filter((e) => e.state == WarningState.Warning).length,
+  );
 
   return 0;
 }

@@ -4,6 +4,12 @@ import type { TrackMetadata } from "../src/cli/resolver";
 
 setDefaultTimeout(1_000_000);
 
+/*
+failed to search: disappointment (and weird order in album too)
+failed to capture: me
+"track number already exists" should only warn
+*/
+
 function getTrack(name: string, artist: string): TrackMetadata {
   return {
     id: 1,
