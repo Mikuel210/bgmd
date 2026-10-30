@@ -21,6 +21,7 @@ export interface TrackMetadata {
   name: string;
   discNumber: number;
   trackNumber: number;
+  durationMs: number;
   album: AlbumMetadata;
 }
 
@@ -108,6 +109,7 @@ export async function searchTracks(
       name: e.trackName,
       discNumber: e.discNumber,
       trackNumber: e.trackNumber,
+      durationMs: e.trackTimeMillis,
       album: {
         id: e.collectionId,
         name: e.collectionName,
@@ -142,6 +144,7 @@ export async function tracksFromAlbum(album: AlbumMetadata): Promise<Result<Trac
         name: e.trackName,
         discNumber: e.discNumber,
         trackNumber: e.trackNumber,
+        durationMs: e.trackTimeMillis,
         album: {
           id: e.collectionId,
           name: e.collectionName,

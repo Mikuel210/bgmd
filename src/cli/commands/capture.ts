@@ -31,6 +31,7 @@ async function captureTrack(track: TrackMetadata): Promise<WarningResult<Song>> 
     artist: track.album.artist.name,
     discNumber: track.discNumber,
     trackNumber: track.trackNumber,
+    durationMs: track.durationMs,
     state: SongState.Captured,
     mood: {},
     tags: [],

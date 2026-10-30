@@ -5,9 +5,9 @@ import type { TrackMetadata } from "../src/cli/resolver";
 setDefaultTimeout(1_000_000);
 
 /*
+TODO
 failed to search: disappointment (and weird order in album too)
-failed to capture: me
-"track number already exists" should only warn
+i think minecraft had wrong audios?
 */
 
 function getTrack(name: string, artist: string): TrackMetadata {
@@ -16,6 +16,7 @@ function getTrack(name: string, artist: string): TrackMetadata {
     name,
     trackNumber: 1,
     discNumber: 1,
+    durationMs: 0,
     album: {
       id: 1,
       name: "",

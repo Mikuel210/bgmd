@@ -128,8 +128,7 @@ function play(): Result<Status> {
   // playerctl integration
   player.metadata = {
     "mpris:trackid": player.objectPath("track/0"),
-    "mpris:length": 60 * 1000 * 1000, // In microseconds
-    "mpris:artUrl": "http://www.adele.tv/images/facebook/adele.jpg",
+    "mpris:length": song.durationMs * 1000,
     "xesam:title": song.name,
     "xesam:album": song.album,
     "xesam:artist": [song.artist],
@@ -198,6 +197,7 @@ export function pause(): Status {
 
   send(["set_property", "pause", true]);
   status.paused = true;
+  player.playbackStatus = Player.PLAYBACK_STATUS_PAUSED;
 
   return status;
 }
@@ -207,6 +207,7 @@ export function resume(): Status {
 
   send(["set_property", "pause", false]);
   status.paused = false;
+  player.playbackStatus = Player.PLAYBACK_STATUS_PLAYING;
 
   return status;
 }
@@ -218,6 +219,7 @@ export function stop(): Status {
     playing: false,
   };
 
+  player.playbackStatus = Player.PLAYBACK_STATUS_STOPPED;
   return status;
 }
 
@@ -228,3 +230,10 @@ function kill() {
   process = null;
   socket = null;
 }
+
+player.on("quit", stop);
+player.on("stop", stop);
+player.on("next", skip);
+player.on("pause", pause);
+player.on("play", resume);
+player.on("playpause", resume);
