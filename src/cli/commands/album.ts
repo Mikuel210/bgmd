@@ -5,76 +5,79 @@ import { delete_libraryAlbums, get_libraryAlbums, put_libraryAlbums } from "../c
 import { styleText } from "node:util";
 
 export async function albumList(args: Argument[], flags: Flag[]): Promise<number> {
-    const result = await get_libraryAlbums();
+  const result = await get_libraryAlbums();
 
-    if (!result.success) {
-        console.error(`Failed to list albums: ${result.error}`);
-        return 1;
-    }
+  if (!result.success) {
+    console.error(`Failed to list albums: ${result.error}`);
+    return 1;
+  }
 
-    for (const album of result.value)
-        console.log(stringifyAlbum(album));
+  for (const album of result.value) console.log(stringifyAlbum(album));
 
-    return 0;
+  return 0;
 }
 
 export async function albumShow(args: Argument[], flags: Flag[]): Promise<number> {
-    const album = args[0]!.value as Album;
+  const album = args[0]!.value as Album;
 
-    logObject({
-        name: album.name,
-        artist: album.artist
-    });
+  logObject({
+    name: album.name,
+    artist: album.artist,
+    tracks: album.songs.length,
+  });
 
-    console.log("\nTracks:");
+  console.log("\nTracks:");
 
-    for (const song of album.songs)
-        console.log(`  ${song.trackNumber}. ${song.name} ${styleText(DARK_GREY, `[${song.id}]`)}`);
+  for (const song of album.songs) {
+    console.log(`  ${song.trackNumber}. ${song.name} ${styleText(DARK_GREY, `[${song.id}]`)}`);
+  }
 
-    return 0;
+  return 0;
 }
 
 export async function albumEdit(args: Argument[], flags: Flag[]): Promise<number> {
-    const album = args[0]!.value as Album;
-    let changesMade = false;
+  const album = args[0]!.value as Album;
+  let changesMade = false;
 
-    const oldData: AlbumData = { name: album.name, artist: album.artist };
-    const newData: AlbumData = structuredClone(oldData);
+  const oldData: AlbumData = { name: album.name, artist: album.artist };
+  const newData: AlbumData = structuredClone(oldData);
 
-    for (const flag of flags) {
-        switch (flag.longName) {
-            case "name": newData.name = flag.value as string; break;
-            case "artist": newData.artist = flag.value as string; break;
-        }
-
-        changesMade = true;
+  for (const flag of flags) {
+    switch (flag.longName) {
+      case "name":
+        newData.name = flag.value as string;
+        break;
+      case "artist":
+        newData.artist = flag.value as string;
+        break;
     }
 
-    // Update album
-    const result = await put_libraryAlbums(oldData, newData);
+    changesMade = true;
+  }
 
-    if (!result.success) {
-        console.error(`Failed to edit album: ${result.error}`);
-        return 1;
-    }
+  // Update album
+  const result = await put_libraryAlbums(oldData, newData);
 
-    if (changesMade)
-        console.log(`Album updated: ${stringifyAlbum(result.value)}`);
-    else
-        console.warn("No changes made");
+  if (!result.success) {
+    console.error(`Failed to edit album: ${result.error}`);
+    return 1;
+  }
 
-    return 0;
+  if (changesMade) console.log(`Album updated: ${stringifyAlbum(result.value)}`);
+  else console.warn("No changes made");
+
+  return 0;
 }
 
 export async function albumRemove(args: Argument[], flags: Flag[]): Promise<number> {
-    const album = args[0]!.value as Album;
-    const result = await delete_libraryAlbums({ name: album.name, artist: album.artist });
+  const album = args[0]!.value as Album;
+  const result = await delete_libraryAlbums({ name: album.name, artist: album.artist });
 
-    if (!result.success) {
-        console.error(`Failed to remove album: ${result.error}`);
-        return 1;
-    }
-
-    console.log(`Album removed: ${stringifyAlbum(result.value)}`);
+  if (!result.success) {
+    console.error(`Failed to remove album: ${result.error}`);
     return 1;
+  }
+
+  console.log(`Album removed: ${stringifyAlbum(result.value)}`);
+  return 1;
 }
