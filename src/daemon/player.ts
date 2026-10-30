@@ -8,11 +8,24 @@ let process: Bun.Subprocess | null = null;
 let socketPath: string | null = null;
 let socket: Socket | null = null;
 
+let playTime: number;
+let pauseTime: number;
+
 const player = Player({
   name: "bgmd",
   identity: "bgmd",
   supportedInterfaces: ["player"],
 });
+
+player.getPosition = function () {
+  if (!status.playing) return 0;
+
+  if (status.paused) {
+    return (pauseTime - playTime) * 1000;
+  } else {
+    return (Date.now() - playTime) * 1000;
+  }
+};
 
 export const getStatus = () => status;
 
@@ -135,6 +148,7 @@ function play(): Result<Status> {
   };
 
   player.playbackStatus = Player.PLAYBACK_STATUS_PLAYING;
+  playTime = Date.now();
 
   return {
     success: true,
@@ -174,10 +188,7 @@ export function skip(): Status {
   if (process != null) kill();
 
   if (status.queue.length == 0) {
-    status = {
-      playing: false,
-    };
-
+    stop();
     return status;
   }
 
@@ -197,8 +208,9 @@ export function pause(): Status {
 
   send(["set_property", "pause", true]);
   status.paused = true;
-  player.playbackStatus = Player.PLAYBACK_STATUS_PAUSED;
 
+  player.playbackStatus = Player.PLAYBACK_STATUS_PAUSED;
+  pauseTime = Date.now();
   return status;
 }
 
@@ -237,3 +249,8 @@ player.on("next", skip);
 player.on("pause", pause);
 player.on("play", resume);
 player.on("playpause", resume);
+
+player.on("position", function (us: { trackId: string; position: number }) {
+  send(["seek", us.position / 1_000_000, "absolute"]);
+  playTime = Date.now() - us.position / 1000;
+});
