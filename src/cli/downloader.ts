@@ -36,15 +36,6 @@ async function getVideos(track: TrackMetadata, count: number): Promise<Result<Sc
   const format = "%(id)s>%(channel)s>%(title)s";
   const args = ["yt-dlp", "--simulate", "--print", format, query];
   const process = Bun.spawn(args, { stderr: "ignore" });
-  const exitCode = await process.exited;
-
-  if (exitCode != 0) {
-    return {
-      success: false,
-      error: `Process exited with code ${exitCode}`,
-    };
-  }
-
   const output = (await process.stdout.text()).trim();
 
   if (!output) {
