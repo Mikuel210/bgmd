@@ -184,7 +184,6 @@ function send(command: any[], request_id?: number) {
 
 export function skip(): Status {
   if (!status.playing) return status;
-
   if (process != null) kill();
 
   if (status.queue.length == 0) {

@@ -25,6 +25,7 @@ type VideoMetadata = {
   id: string;
   channel: string;
   title: string;
+  durationMs: number;
 };
 
 type ScoredVideo = VideoMetadata & {
@@ -33,7 +34,7 @@ type ScoredVideo = VideoMetadata & {
 
 async function getVideos(track: TrackMetadata, count: number): Promise<Result<ScoredVideo[]>> {
   const query = `ytsearch${count}:${track.album.artist.name} - ${track.name}`;
-  const format = "%(id)s>%(channel)s>%(title)s";
+  const format = "%(id)s>%(channel)s>%(title)s>%(duration)s";
   const args = ["yt-dlp", "--simulate", "--print", format, query];
   const process = Bun.spawn(args, { stderr: "ignore" });
   const output = (await process.stdout.text()).trim();
@@ -53,6 +54,7 @@ async function getVideos(track: TrackMetadata, count: number): Promise<Result<Sc
         id: split[0] || "",
         channel: split[1] || "",
         title: split[2] || "",
+        durationMs: parseInt(split[3] ?? "0") * 1000,
       };
     })
     .filter((v) => v.id && v.title) as VideoMetadata[];
@@ -81,8 +83,9 @@ async function getVideos(track: TrackMetadata, count: number): Promise<Result<Sc
     let score = e.score;
 
     // Check for exact match
+    const trackName = track.name.toLowerCase();
     const title = e.title.toLowerCase();
-    const titleMatch = title.toLowerCase() == track.name.toLowerCase();
+    const titleMatch = title == trackName;
     const artistName = track.album.artist.name.toLowerCase();
     const artistMatch = [artistName, `${artistName} - topic`].includes(e.channel.toLowerCase());
 
@@ -90,20 +93,22 @@ async function getVideos(track: TrackMetadata, count: number): Promise<Result<Sc
       return { ...e, score: 0 };
     }
 
-    // Boost audio versions
-    if (title.includes("audio")) {
+    // Boost artist and title matches
+    if (artistMatch || titleMatch) {
       score *= 0.5;
     }
 
     // Penalize live versions and music videos
-    if (title.includes("live") || title.includes("concert")) {
+    if (
+      (!trackName.includes("live") && title.includes("live")) ||
+      (!trackName.includes("concert") && title.includes("concert")) ||
+      (!trackName.includes("video") && title.includes("video") && !title.includes("lyric"))
+    ) {
       score *= 2;
     }
 
-    // Penalize music videos
-    if (title.includes("video") && !title.includes("lyric")) {
-      score *= 2;
-    }
+    // Penalize duration mismatch
+    score += Math.abs(track.durationMs - e.durationMs) / 30_000;
 
     return { ...e, score };
   });
