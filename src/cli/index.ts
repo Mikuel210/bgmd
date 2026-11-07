@@ -7,6 +7,7 @@ import {
   validateSong,
   validateString,
   validateSwitch,
+  validateTimeSpanMs,
   validateYouTubeSource,
 } from "./framework/validate";
 
@@ -124,6 +125,11 @@ registerCommand({
       description: "The artist of the song to add",
       validate: validateString,
     },
+    {
+      name: "duration",
+      description: "The duration of the song to add",
+      validate: validateTimeSpanMs,
+    },
   ],
   flags: [
     {
@@ -219,8 +225,14 @@ registerCommand({
       validate: validateString,
     },
     {
-      longName: "disc-number",
+      longName: "duration",
       shortName: "d",
+      description: "Change the duration of the song",
+      switch: false,
+      validate: validateTimeSpanMs,
+    },
+    {
+      longName: "disc-number",
       description: "Change the disc number for the song",
       switch: false,
       validate: validatePositiveInteger,
