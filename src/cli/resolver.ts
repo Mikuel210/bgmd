@@ -1,7 +1,7 @@
 import { forEachConcurrent, type Result } from "../core/task";
-import { createSpinner, reserveLines } from "./formatter";
+import { createSpinner, reserveLines } from "onectl";
 import { CONCURRENT_TASKS } from "../core/config";
-import { fetchResult } from "./connection";
+import { fetchResult } from "onectl";
 
 const SEARCH_LIMIT = 5;
 

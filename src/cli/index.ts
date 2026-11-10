@@ -3,33 +3,37 @@ import {
   validateArtist,
   validateEntity,
   validateLocalSource,
-  validatePositiveInteger,
   validateSong,
+  validateYouTubeSource,
+} from "./validate";
+
+import {
+  createCommandFramework,
+  validatePositiveInteger,
   validateString,
   validateSwitch,
   validateTimeSpanMs,
-  validateYouTubeSource,
-} from "./framework/validate";
+} from "onectl";
 
 import { songAdd, songEdit, songList, songRemove, songShow } from "./commands/song";
 import { artistEdit, artistList, artistRemove, artistShow } from "./commands/artist";
 import { albumEdit, albumList, albumRemove, albumShow } from "./commands/album";
 import { captureAlbum, captureArtist, captureSong } from "./commands/capture";
-import { pause, play, resume, root, skip, status, stop } from "./commands/general";
-import { handle, registerCommand } from "./framework/handler";
+import { pause, play, resume, skip, status, stop } from "./commands/general";
 import { pull } from "./commands/pull";
 
+const cli = createCommandFramework("bgmctl");
 let args = Bun.argv.slice(2);
 
-registerCommand({
+cli.registerCommand({
   route: [],
   description: "The background music daemon",
   args: [],
   flags: [],
-  run: root,
+  run: cli.root,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["status"],
   description: "See the current status of playback",
   args: [],
@@ -37,7 +41,7 @@ registerCommand({
   run: status,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["play"],
   description: "Play a song, album or artist",
   args: [
@@ -66,7 +70,7 @@ registerCommand({
   run: play,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["skip"],
   description: "Skip the current song",
   args: [],
@@ -74,7 +78,7 @@ registerCommand({
   run: skip,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["pause"],
   description: "Pause the current song",
   args: [],
@@ -82,7 +86,7 @@ registerCommand({
   run: pause,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["resume"],
   description: "Resume the current song",
   args: [],
@@ -90,7 +94,7 @@ registerCommand({
   run: resume,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["stop"],
   description: "Stop playback",
   args: [],
@@ -98,7 +102,7 @@ registerCommand({
   run: stop,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["song", "list"],
   description: "List all songs in the library",
   args: [],
@@ -106,7 +110,7 @@ registerCommand({
   run: songList,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["song", "add"],
   description: "Add a song to the library",
   args: [
@@ -164,7 +168,7 @@ registerCommand({
   run: songAdd,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["song", "capture"],
   description: "Search and add a song to the library",
   args: [
@@ -178,7 +182,7 @@ registerCommand({
   run: captureSong,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["song", "show"],
   description: "Show the properties of a song",
   args: [
@@ -192,7 +196,7 @@ registerCommand({
   run: songShow,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["song", "edit"],
   description: "Edit the properties of a song",
   args: [
@@ -262,7 +266,7 @@ registerCommand({
   run: songEdit,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["song", "remove"],
   description: "Remove a song from the library",
   args: [
@@ -276,7 +280,7 @@ registerCommand({
   run: songRemove,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["album", "list"],
   description: "List all albums in the library",
   args: [],
@@ -284,7 +288,7 @@ registerCommand({
   run: albumList,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["album", "capture"],
   description: "Search and add an album to the library",
   args: [
@@ -298,7 +302,7 @@ registerCommand({
   run: captureAlbum,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["album", "show"],
   description: "Show the properties of an album",
   args: [
@@ -312,7 +316,7 @@ registerCommand({
   run: albumShow,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["album", "edit"],
   description: "Edit the properties of an album",
   args: [
@@ -341,7 +345,7 @@ registerCommand({
   run: albumEdit,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["album", "remove"],
   description: "Remove an album from the library",
   args: [
@@ -355,7 +359,7 @@ registerCommand({
   run: albumRemove,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["artist", "list"],
   description: "List all artists in the library",
   args: [],
@@ -363,7 +367,7 @@ registerCommand({
   run: artistList,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["artist", "capture"],
   description: "Search and add an artist to the library",
   args: [
@@ -377,7 +381,7 @@ registerCommand({
   run: captureArtist,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["artist", "show"],
   description: "Show the properties of an artist",
   args: [
@@ -391,7 +395,7 @@ registerCommand({
   run: artistShow,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["artist", "edit"],
   description: "Edit the properties of an artist",
   args: [
@@ -413,7 +417,7 @@ registerCommand({
   run: artistEdit,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["artist", "remove"],
   description: "Remove an artist from the library",
   args: [
@@ -427,7 +431,7 @@ registerCommand({
   run: artistRemove,
 });
 
-registerCommand({
+cli.registerCommand({
   route: ["pull"],
   description: "Download all missing songs in the library",
   args: [],
@@ -435,4 +439,4 @@ registerCommand({
   run: pull,
 });
 
-process.exit(await handle(args));
+process.exit(await cli.handle(args));

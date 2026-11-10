@@ -5,8 +5,9 @@ import type { TrackMetadata } from "../src/cli/resolver";
 setDefaultTimeout(1_000_000);
 
 /*
-TODO
+TODO:
 failed to search: disappointment (and weird order in album too)
+wrong version: Four Tet - Ending
 i think minecraft had wrong audios?
 */
 

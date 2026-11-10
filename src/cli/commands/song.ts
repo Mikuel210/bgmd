@@ -5,9 +5,10 @@ import {
   put_librarySongs,
 } from "../connection";
 
-import type { Argument, Flag } from "../framework/command";
 import { SongState, type Song, type SongData } from "../../core/library";
-import { formatMs, logObject, stringifySong } from "../formatter";
+import type { Argument, Flag } from "onectl";
+import { formatMs, stringifySong } from "../formatter";
+import { logObject } from "onectl";
 
 export async function songList(args: Argument[], flags: Flag[]): Promise<number> {
   const result = await get_librarySongs();

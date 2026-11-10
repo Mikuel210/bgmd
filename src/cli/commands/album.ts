@@ -1,8 +1,9 @@
-import type { Argument, Flag } from "../framework/command";
 import type { Album, AlbumData } from "../../core/library";
-import { DARK_GREY, logObject, stringifyAlbum } from "../formatter";
+import type { Argument, Flag } from "onectl";
+import { DARK_GREY, stringifyAlbum } from "../formatter";
 import { delete_libraryAlbums, get_libraryAlbums, put_libraryAlbums } from "../connection";
 import { styleText } from "node:util";
+import { logObject } from "onectl";
 
 export async function albumList(args: Argument[], flags: Flag[]): Promise<number> {
   const result = await get_libraryAlbums();

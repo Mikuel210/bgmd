@@ -9,17 +9,11 @@ import {
   type TrackMetadata,
 } from "../resolver";
 
-import {
-  createSpinner,
-  logTracksResult,
-  promptOptions,
-  reserveLines,
-  stringifySong,
-} from "../formatter";
-
 import { forEachConcurrent, WarningState, type Result, type WarningResult } from "../../core/task";
 import { SongState, type Song, type SongData } from "../../core/library";
-import type { Argument, Flag } from "../framework/command";
+import type { Argument, Flag } from "onectl";
+import { createSpinner, promptOptions, reserveLines } from "onectl";
+import { logTracksResult, stringifySong } from "../formatter";
 import { post_librarySongs, post_librarySongsValidate } from "../connection";
 import { CONCURRENT_TASKS } from "../../core/config";
 import { sourceFromTrack } from "../downloader";

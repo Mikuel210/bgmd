@@ -1,7 +1,8 @@
-import type { Argument, Flag } from "../framework/command";
 import type { AlbumData, Artist, ArtistData } from "../../core/library";
-import { logObject, stringifyAlbum, stringifyArtist } from "../formatter";
+import type { Argument, Flag } from "onectl";
 import { delete_libraryArtists, get_libraryArtists, put_libraryArtists } from "../connection";
+import { stringifyAlbum, stringifyArtist } from "../formatter";
+import { logObject } from "onectl";
 
 export async function artistList(args: Argument[], flags: Flag[]): Promise<number> {
   const result = await get_libraryArtists();

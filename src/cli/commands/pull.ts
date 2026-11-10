@@ -1,9 +1,10 @@
-import type { Argument, Flag } from "../framework/command";
+import type { Argument, Flag } from "onectl";
 import type { Song } from "../../core/library";
 import { get_librarySongs, put_librarySongs } from "../connection";
-import { createSpinner, logTracksResult, reserveLines } from "../formatter";
+import { createSpinner, reserveLines } from "onectl";
 import { CONCURRENT_DOWNLOADS } from "../../core/config";
 import { forEachConcurrent } from "../../core/task";
+import { logTracksResult } from "../formatter";
 import { stringifySong } from "../formatter";
 import { downloadSong } from "../downloader";
 
