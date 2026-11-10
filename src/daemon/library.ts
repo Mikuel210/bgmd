@@ -15,7 +15,7 @@ import { HOME_PATH } from "../core/config";
 import path from "node:path";
 
 const LIBRARY_FILENAME = "library.json";
-const store = createStore(path.join(HOME_PATH, ".config"));
+const store = createStore(path.join(HOME_PATH, ".config/bgmd"));
 let queue: Promise<unknown> = Promise.resolve();
 
 function withLibrary<T>(predicate: (library: Library) => Promise<Result<T>>): Promise<Result<T>> {
@@ -119,10 +119,7 @@ export function addSong(data: SongData, explicitTrackNumber: boolean): Promise<R
 
       // Pick next valid track number
       const discSongs = library.songs
-        .filter(
-          (e) =>
-            e.artist == data.artist && e.album == data.album && e.discNumber == data.discNumber,
-        )
+        .filter((e) => e.artist == data.artist && e.album == data.album && e.discNumber == data.discNumber)
         .sort((a, b) => a.trackNumber - b.trackNumber);
 
       let lastTrackNumber = 0;
@@ -168,11 +165,7 @@ export function editSong(song: Song): Promise<Result<Song>> {
     const songIndex = library.songs.findIndex((e) => e.id == song.id);
 
     if (songIndex != -1) {
-      library.songs = [
-        ...library.songs.slice(0, songIndex),
-        song,
-        ...library.songs.slice(songIndex + 1),
-      ];
+      library.songs = [...library.songs.slice(0, songIndex), song, ...library.songs.slice(songIndex + 1)];
 
       return {
         success: true,
@@ -244,9 +237,7 @@ export async function editAlbum(oldData: AlbumData, newData: AlbumData): Promise
     if (!albumsResult.success) return albumsResult;
 
     // Find match
-    const match = albumsResult.value.find(
-      (e) => e.name == oldData.name && e.artist == oldData.artist,
-    );
+    const match = albumsResult.value.find((e) => e.name == oldData.name && e.artist == oldData.artist);
 
     if (!match) {
       return {
@@ -263,9 +254,7 @@ export async function editAlbum(oldData: AlbumData, newData: AlbumData): Promise
     }
 
     // Find collision
-    const collision = albumsResult.value.find(
-      (e) => e.name == newData.name && e.artist == newData.artist,
-    );
+    const collision = albumsResult.value.find((e) => e.name == newData.name && e.artist == newData.artist);
 
     if (collision) {
       return {
@@ -349,10 +338,7 @@ export async function getArtists(): Promise<Result<Artist[]>> {
   };
 }
 
-export async function editArtist(
-  oldData: ArtistData,
-  newData: ArtistData,
-): Promise<Result<Artist>> {
+export async function editArtist(oldData: ArtistData, newData: ArtistData): Promise<Result<Artist>> {
   const artistsResult = await getArtists();
 
   return withLibrary(async (library) => {
