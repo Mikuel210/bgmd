@@ -1,4 +1,4 @@
-import type { AlbumData, Artist, ArtistData } from "../../core/library";
+import type { Artist, ArtistData } from "../../core/library";
 import type { Argument, Flag } from "onectl";
 import { delete_libraryArtists, get_libraryArtists, put_libraryArtists } from "../connection";
 import { stringifyAlbum, stringifyArtist } from "../formatter";
@@ -23,6 +23,9 @@ export async function artistShow(args: Argument[], flags: Flag[]): Promise<numbe
   logObject({
     name: artist.name,
     albums: artist.albums.length,
+    songs: artist.albums
+      .map((e) => e.songs.length)
+      .reduce((previous, current) => previous + current),
   });
 
   console.log("\nAlbums:");
