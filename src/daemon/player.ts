@@ -110,18 +110,13 @@ function play(): Result<Status> {
 
   // Spawn mpv process
   let command: string[] = [];
+  const format = "--ytdl-format=bestaudio[protocol=m3u8_native]/best[protocol=m3u8_native]/bestaudio/best";
   socketPath = `/tmp/mpv-${crypto.randomUUID()}.sock`;
 
   if (song.localSource) {
-    command = ["mpv", `--input-ipc-server=${socketPath}`, song.localSource, "--aid=1"];
+    command = ["mpv", `--input-ipc-server=${socketPath}`, song.localSource, "--aid=1", format];
   } else if (song.youtubeSource) {
-    command = [
-      "mpv",
-      `--input-ipc-server=${socketPath}`,
-      song.youtubeSource,
-      "--no-video",
-      "--aid=1",
-    ];
+    command = ["mpv", `--input-ipc-server=${socketPath}`, song.youtubeSource, "--no-video", "--aid=1", format];
   } else {
     return {
       success: false,
